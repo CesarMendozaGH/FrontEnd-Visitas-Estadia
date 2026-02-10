@@ -18,9 +18,9 @@ export const Sidebar = () => {
             to="/Espacios"
             className={`nav-link d-flex align-items-center gap-2 ${location.pathname.includes('espacios') ? 'active' : 'link-dark'}`}
           >
-            <span className="material-symbols-outlined">
+            {/* <span className="material-symbols-outlined">
               Home
-            </span>
+            </span> */}
             Espacios
           </Link>
         </Nav.Item>
@@ -30,9 +30,9 @@ export const Sidebar = () => {
             to="/reservas"
             className={`nav-link d-flex align-items-center gap-2 ${location.pathname.includes('reservas') ? 'active' : 'link-dark'}`}
           >
-            <span className="material-symbols-outlined">
+            {/* <span className="material-symbols-outlined">
               event
-            </span>
+            </span> */}
             Reservas
           </Link>
         </Nav.Item>
@@ -43,12 +43,13 @@ export const Sidebar = () => {
             className={`nav-link d-flex align-items-center gap-2 ${location.pathname.includes('asistencias') ? 'active' : 'link-dark'}`}
           >
 
-            <span className="material-symbols-outlined">
+            {/* <span className="material-symbols-outlined">
               list_alt_check
-            </span>
+            </span> */}
             Pasar Lista
           </Link>
         </Nav.Item>
+        
       </Nav>
 
       {/* Footer opcional del sidebar */}

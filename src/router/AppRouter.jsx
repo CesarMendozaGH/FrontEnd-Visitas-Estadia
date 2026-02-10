@@ -1,8 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
-// Importaremos tus páginas aquí (por ahora usaremos placeholders si no existen)
 import { EspaciosPage } from '../pages/Espacios/EspaciosPage';
 import { BitacoraPage } from '../pages/Bitacora/BitacoraPage';
+import { ReservasPage } from '../pages/Reservas/ReservasPage';
 
 const router = createBrowserRouter([
   {
@@ -15,7 +15,7 @@ const router = createBrowserRouter([
       },
       {
         path: "reservas",
-        element: <div><h1>Página de Reservas (Próximamente)</h1></div>,
+        element: <ReservasPage />,
       },
       {
         path: "asistencias",

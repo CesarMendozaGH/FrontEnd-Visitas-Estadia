@@ -101,7 +101,7 @@ export function BitacoraPage() {
                             <th>Visitante</th>
                             <th>Motivo</th>
                             <th className="text-center">Estado</th>
-                            <th className="text-center">Salida Real</th>
+                            <th className="text-center">Salida</th>
                             <th className="text-center">Acciones</th>
                         </tr>
                     </thead>
