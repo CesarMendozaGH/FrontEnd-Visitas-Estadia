@@ -1,5 +1,17 @@
 import api from '../api/apiConfig';
 
+// Helper para obtener fecha actual en formato local (YYYY-MM-DDTHH:mm:ss)
+const getLocalDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
 export const reservasService = {
     // 1. Obtener todas las reservas (GET)
     getAll: async () => {
@@ -15,8 +27,6 @@ export const reservasService = {
 
     // 3. Crear nueva reserva (POST)
     create: async (data) => {
-        const now = new Date();
-        
         const payload = {
             idReserva: 0,
             espacioId: data.espacioId,
@@ -31,7 +41,7 @@ export const reservasService = {
             fechaInicio: data.fechaInicio,
             fechaFin: data.fechaFin,
             estatusReserva: true,
-            createdAt: now.toISOString()
+            createdAt: getLocalDateTime()
         };
 
         console.log('Enviando reserva:', JSON.stringify(payload, null, 2));
@@ -65,8 +75,6 @@ export const reservasService = {
 
     // 7. Agregar asistentes masivos (POST)
     agregarAsistentes: async (idReserva, listaAsistentes) => {
-        const now = new Date();
-        
         const payload = listaAsistentes.map(asistente => ({
             idLista: 0,
             idReservaFk: idReserva,
@@ -74,7 +82,7 @@ export const reservasService = {
             apellidoPaterno: asistente.apellidoPaterno || "",
             apellidoMaterno: asistente.apellidoMaterno || "",
             asistio: false,
-            createdAt: now.toISOString()
+            createdAt: getLocalDateTime()
         }));
 
         console.log('Enviando asistentes:', JSON.stringify(payload, null, 2));

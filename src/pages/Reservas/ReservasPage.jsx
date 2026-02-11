@@ -31,9 +31,8 @@ export function ReservasPage() {
         setLoading(true);
         try {
             const data = await reservasService.getAll();
-            // Filtramos por estatus activo
-            const activas = data.filter(r => r.estatusReserva !== false);
-            setReservas(activas);
+            // Mostrar todas las reservas (activas e inactivas)
+            setReservas(data);
         } catch (error) {
             console.error("Error al cargar reservas:", error);
             alert("Error al cargar la lista de reservas");
@@ -80,14 +79,17 @@ export function ReservasPage() {
     };
 
     // --- OPERACIONES CRUD ---
-    const handleSaveReserva = async (formData) => {
+    const handleSaveReserva = async (formData, estatusReserva) => {
         try {
             if (formData.idReserva === 0) {
                 // CREAR
                 await reservasService.create(formData);
             } else {
-                // EDITAR
-                await reservasService.update(formData.idReserva, formData);
+                // EDITAR - preservar el estatus actual
+                await reservasService.update(formData.idReserva, {
+                    ...formData,
+                    estatusReserva: estatusReserva
+                });
             }
             handleCloseModal();
             cargarReservas();
@@ -111,17 +113,28 @@ export function ReservasPage() {
         }
     };
 
-    // Formatear fecha para mostrar
+    // Obtener nombre del espacio (busca en el objeto includo o en la lista local)
+    const getEspacioNombre = (item) => {
+        // Primero intentar obtener del objeto espacio incluido por el backend
+        if (item.espacio?.nombre) {
+            return item.espacio.nombre;
+        }
+        // Si no, buscar en la lista local de espacios
+        const espacio = espacios.find(e => e.idEspacios === item.espacioId);
+        return espacio?.nombre || `ID: ${item.espacioId}`;
+    };
+
+    // Formatear fecha para mostrar en formato DD/MM/YYYY
     const formatFecha = (fechaISO) => {
         if (!fechaISO) return "-";
+        // Convertir directamente sin convertir a UTC
         const fecha = new Date(fechaISO);
-        return fecha.toLocaleDateString('es-MX', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const day = String(fecha.getDate()).padStart(2, '0');
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const year = fecha.getFullYear();
+        const hours = String(fecha.getHours()).padStart(2, '0');
+        const minutes = String(fecha.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     };
 
     return (
@@ -129,7 +142,7 @@ export function ReservasPage() {
             {/* Encabezado con Botón Agregar */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Gestión de Reservas</h2>
-                <Button variant="success" onClick={handleOpenCreate}>
+                <Button className='btn' variant="outline-primary" onClick={handleOpenCreate}>
                     <MdAdd size={20} /> Nueva Reserva
                 </Button>
             </div>
@@ -157,9 +170,15 @@ export function ReservasPage() {
                             <tr><td colSpan="9" className="text-center py-4">No hay reservas registradas.</td></tr>
                         ) : (
                             reservas.map((item) => (
-                                <tr key={item.idReserva}>
+                                <tr 
+                                    key={item.idReserva}
+                                    style={{ 
+                                        opacity: item.estatusReserva === false ? 0.6 : 1,
+                                        backgroundColor: item.estatusReserva === false ? '#f8f9fa' : 'transparent'
+                                    }}
+                                >
                                     <td>{item.idReserva}</td>
-                                    <td className="fw-bold">{item.espacio?.nombre || `ID: ${item.espacioId}`}</td>
+                                    <td className="fw-bold">{getEspacioNombre(item)}</td>
                                     <td>{item.nombreReservante}</td>
                                     <td>{item.areaReservante}</td>
                                     <td>{formatFecha(item.fechaInicio)}</td>
@@ -217,6 +236,7 @@ export function ReservasPage() {
                 handleClose={handleCloseModal} 
                 handleSave={handleSaveReserva}
                 reservaEditar={editingReserva}
+                reservaEstatus={editingReserva?.estatusReserva}
                 espacios={espacios}
             />
 

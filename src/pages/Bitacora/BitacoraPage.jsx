@@ -54,12 +54,16 @@ export function BitacoraPage() {
     // LÓGICA CRÍTICA: Según tu backend, si horaEntrada == horaSalida, sigue adentro.
     const estaEnSitio = (v) => {
         if (!v.horaSalida) return true; // Si es null, sigue dentro
-        return v.horaEntrada === v.horaSalida; 
+        return v.horaEntrada === v.horaSalida;
     };
 
     // Filtramos los datos según la fecha seleccionada
-    // Temporalmente sin filtro para debuggear
-    const visitasFiltradas = visitas;
+    const visitasFiltradas = visitas.filter(visita => {
+        if (!visita.createdAt) return false;
+        // Extraemos la fecha en formato YYYY-MM-DD del ISO timestamp
+        const fechaVisita = visita.createdAt.split('T')[0];
+        return fechaVisita === filtroFecha;
+    });
     console.log('Total visitas:', visitas.length, 'Filtradas:', visitasFiltradas.length);
 
     return (
@@ -67,20 +71,22 @@ export function BitacoraPage() {
             {/* Cabecera y Filtros */}
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2 className="m-0 d-flex align-items-center gap-2">
-                    <MdHistory className="text-primary"/> Bitácora de Accesos
+                    <MdHistory className="text-primary" /> Bitácora de Accesos
                 </h2>
-                
+
                 <div className="d-flex align-items-center gap-2">
                     {/* Botón para registrar nueva visita */}
-                    <Button variant="primary" onClick={() => setShowModal(true)} className="d-flex align-items-center gap-2">
-                        <MdPersonAdd /> Registrar Visita
+                    
+                    <Button className='d-flex align-items-center' variant='outline-primary' onClick={() => setShowModal(true)}>
+                        <p className='mb-0 mx-2'> Registrar visita</p>
+                        <MdPersonAdd size={24} className='m-2'/>
                     </Button>
 
                     <div className="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border">
-                        <MdPersonSearch size={24} className="text-muted"/>
-                        <Form.Control 
-                            type="date" 
-                            value={filtroFecha} 
+                        <MdPersonSearch size={24} className="text-muted" />
+                        <Form.Control
+                            type="date"
+                            value={filtroFecha}
                             onChange={(e) => setFiltroFecha(e.target.value)}
                             className="border-0 bg-transparent fw-bold"
                             style={{ width: 'auto' }}
@@ -117,18 +123,18 @@ export function BitacoraPage() {
                                     <tr key={item.idBitacoraVisitas}>
                                         <td className="text-center font-monospace fw-bold text-primary">
                                             {/* Cortamos para mostrar solo HH:MM */}
-                                            {item.horaEntrada?.substring(0, 5)} 
+                                            {item.horaEntrada?.substring(0, 5)}
                                         </td>
                                         <td>
                                             <div className="fw-bold">{item.nombreVisitante}</div>
                                             {/* Si tuviéramos empresa, iría aquí debajo */}
                                         </td>
-                                        <td className="text-muted small">{item.motivoVista}</td>
-                                        
+                                        <td className="text-muted middle">{item.motivoVisita}</td>
+
                                         <td className="text-center">
                                             {activo ? (
-                                                <Badge bg="success" className="d-flex align-items-center justify-content-center gap-1 mx-auto" style={{width: 'fit-content'}}>
-                                                    <span className="spinner-grow spinner-grow-sm" style={{width:'6px', height:'6px'}}></span>
+                                                <Badge bg="success" className="d-flex align-items-center justify-content-center gap-1 mx-auto" style={{ width: 'fit-content' }}>
+                                                    <span className="spinner-grow spinner-grow-sm" style={{ width: '6px', height: '6px' }}></span>
                                                     En Sitio
                                                 </Badge>
                                             ) : (
@@ -142,8 +148,8 @@ export function BitacoraPage() {
 
                                         <td className="text-center">
                                             {activo && (
-                                                <Button 
-                                                    variant="warning" 
+                                                <Button
+                                                    variant="warning"
                                                     size="sm"
                                                     onClick={() => handleMarcarSalida(item)}
                                                     className="d-flex align-items-center gap-1 mx-auto"
@@ -161,7 +167,7 @@ export function BitacoraPage() {
             </div>
 
             {/* Modal para registrar visitas */}
-            <RegistrarVisitaModal 
+            <RegistrarVisitaModal
                 show={showModal}
                 handleClose={() => setShowModal(false)}
                 onSuccess={handleRegistrarVista}

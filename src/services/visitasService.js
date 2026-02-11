@@ -7,6 +7,12 @@ export const visitasService = {
         return response.data;
     },
 
+    // 1b. Obtener historial por fecha (GET) - Optional: uncomment when backend endpoint is ready
+    // getByDate: async (fecha) => {
+    //     const response = await api.get(`/Visitas?fecha=${fecha}`);
+    //     return response.data;
+    // },
+
     // 2. Registrar entrada manual (POST)
     create: async (data) => {
         const now = new Date();

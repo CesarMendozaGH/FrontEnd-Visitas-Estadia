@@ -85,7 +85,7 @@ export function EspaciosPage() {
             {/* Encabezado con Botón Agregar */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Gestión de Espacios</h2>
-                <Button variant="success" onClick={handleOpenCreate}>
+                <Button variant="outline-primary" onClick={handleOpenCreate}>
                     <MdAdd size={20} /> Nuevo Espacio
                 </Button>
             </div>

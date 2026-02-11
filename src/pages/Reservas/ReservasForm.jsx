@@ -3,7 +3,8 @@ import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 
-export function ReservasForm({ show, handleClose, handleSave, reservaEditar, espacios }) {
+
+export function ReservasForm({ show, handleClose, handleSave, reservaEditar, espacios, reservaEstatus }) {
     const [formData, setFormData] = useState({
         idReserva: 0,
         espacioId: '',
@@ -22,8 +23,18 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
     // Cargar datos cuando se edita
     useEffect(() => {
         if (reservaEditar) {
-            const inicio = new Date(reservaEditar.fechaInicio);
-            const fin = new Date(reservaEditar.fechaFin);
+            // Parsear fecha sin convertir a UTC
+            const parsearFechaLocal = (fechaISO) => {
+                if (!fechaISO) return { fecha: '', hora: '' };
+                // Extraer fecha y hora directamente del string
+                const partes = fechaISO.split('T');
+                const fecha = partes[0];
+                const hora = partes[1] ? partes[1].substring(0, 5) : '';
+                return { fecha, hora };
+            };
+
+            const inicio = parsearFechaLocal(reservaEditar.fechaInicio);
+            const fin = parsearFechaLocal(reservaEditar.fechaFin);
 
             setFormData({
                 idReserva: reservaEditar.idReserva,
@@ -34,10 +45,10 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
                 representanteVisita: reservaEditar.representanteVisita,
                 numeroPersonas: reservaEditar.numeroPersonas,
                 requerimientosEspecialesJson: reservaEditar.requerimientosEspecialesJson || '',
-                fechaInicio: inicio.toISOString().split('T')[0],
-                horaInicio: inicio.toTimeString().substring(0, 5),
-                fechaFin: fin.toISOString().split('T')[0],
-                horaFin: fin.toTimeString().substring(0, 5)
+                fechaInicio: inicio.fecha,
+                horaInicio: inicio.hora,
+                fechaFin: fin.fecha,
+                horaFin: fin.hora
             });
         } else {
             // Reset form para crear nuevo
@@ -69,15 +80,8 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Combinar fecha y hora para crear ISO string
-        const fechaInicioISO = formData.fechaInicio && formData.horaInicio
-            ? new Date(`${formData.fechaInicio}T${formData.horaInicio}:00`).toISOString()
-            : null;
-        
-        const fechaFinISO = formData.fechaFin && formData.horaFin
-            ? new Date(`${formData.fechaFin}T${formData.horaFin}:00`).toISOString()
-            : null;
-
+        // Combinar fecha y hora para crear ISO string (preservando hora local)
+        // Usamos formato local sin convertir a UTC
         const payload = {
             idReserva: formData.idReserva,
             espacioId: parseInt(formData.espacioId),
@@ -87,11 +91,15 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
             representanteVisita: formData.representanteVisita,
             numeroPersonas: parseInt(formData.numeroPersonas),
             requerimientosEspecialesJson: formData.requerimientosEspecialesJson,
-            fechaInicio: fechaInicioISO,
-            fechaFin: fechaFinISO
+            fechaInicio: formData.fechaInicio && formData.horaInicio 
+                ? `${formData.fechaInicio}T${formData.horaInicio}:00` 
+                : null,
+            fechaFin: formData.fechaFin && formData.horaFin 
+                ? `${formData.fechaFin}T${formData.horaFin}:00` 
+                : null
         };
 
-        handleSave(payload);
+        handleSave(payload, reservaEstatus);
     };
 
     return (
@@ -131,6 +139,7 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
                                 value={formData.numeroPersonas}
                                 onChange={handleChange}
                                 min="1"
+                                max="100"
                                 required
                             />
                         </Form.Group>
