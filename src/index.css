@@ -11,6 +11,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: #f8f9fa; /* Un gris muy suave de fondo */
+  /* #f8f9fa gris claro */
 }
 
 #root {

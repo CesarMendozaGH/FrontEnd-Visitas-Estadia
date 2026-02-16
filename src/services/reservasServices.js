@@ -2,14 +2,20 @@ import api from '../api/apiConfig';
 
 // Helper para obtener fecha actual en formato local (YYYY-MM-DDTHH:mm:ss)
 const getLocalDateTime = () => {
+    // const now = new Date();
+    // const year = now.getFullYear();
+    // const month = String(now.getMonth() + 1).padStart(2, '0');
+    // const day = String(now.getDate()).padStart(2, '0');
+    // const hours = String(now.getHours()).padStart(2, '0');
+    // const minutes = String(now.getMinutes()).padStart(2, '0');
+    // const seconds = String(now.getSeconds()).padStart(2, '0');
+    // return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    // Restamos el desfase horario (en minutos) convertido a milisegundos
+    const timeZoneOffset = now.getTimezoneOffset() * 60000;
+    // Creamos una nueva fecha ajustada
+    const localISOTime = new Date(now.getTime() - timeZoneOffset).toISOString().slice(0, -1);
+    return localISOTime; // Devuelve YYYY-MM-DDTHH:mm:ss.sss EXACTO a tu reloj
 };
 
 export const reservasService = {

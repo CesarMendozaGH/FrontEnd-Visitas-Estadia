@@ -3,6 +3,7 @@ import { MainLayout } from '../layouts/MainLayout';
 import { EspaciosPage } from '../pages/Espacios/EspaciosPage';
 import { BitacoraPage } from '../pages/Bitacora/BitacoraPage';
 import { ReservasPage } from '../pages/Reservas/ReservasPage';
+import { ComunitarioPage } from '../pages/Comunitario/ComunitarioPage';
 
 const router = createBrowserRouter([
   {
@@ -22,7 +23,16 @@ const router = createBrowserRouter([
         element:<BitacoraPage />,
       },
       {
-        path: "/", // Home
+        path: "servicio",
+        element:<ComunitarioPage />,
+      },
+      {
+        path: "reportes",
+        element: <h1>PROXIMAMENTE</h1>,
+      },
+      {
+        index: true,
+        path: "home", // Home
         element: <div className='text-center'><h1>Bienvenido al Sistema</h1></div>
       }
     ]
