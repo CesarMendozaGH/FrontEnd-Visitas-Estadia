@@ -134,7 +134,7 @@ export function ComunitarioPage() {
                     ...perfilAEditar, // 1. Tomamos TODOS los datos originales (incluyendo HorasAcumuladasActuales)
                     ...formData       // 2. Sobreescribimos solo lo que se editó en el form (Nombre, Apellidos)
                 };
-                
+
                 await comunitarioService.update(formData.idPerfilComunitario, payloadCompleto);
                 Swal.fire("Actualizado", "Datos guardados correctamente", "success");
             }
@@ -206,9 +206,18 @@ export function ComunitarioPage() {
                                         </div>
                                     </td>
                                     <td className="text-center">
-                                        <Badge bg={porcentaje >= 100 ? "success" : "danger"}>
-                                            {p.horasTotalesDeuda - p.horasAcumuladasActuales} h restantes
-                                        </Badge>
+                                        {p.horasAcumuladasActuales >= p.horasTotalesDeuda ? (
+                                            <Badge bg="success">
+                                                {p.horasAcumuladasActuales > p.horasTotalesDeuda
+                                                    ? `+${p.horasAcumuladasActuales - p.horasTotalesDeuda} h extra`
+                                                    : "0 h restantes"
+                                                }
+                                            </Badge>
+                                        ) : (
+                                            <Badge bg="danger">
+                                                {p.horasTotalesDeuda - (p.horasAcumuladasActuales || 0)} h restantes
+                                            </Badge>
+                                        )}
                                     </td>
                                     <td className="text-center">
                                         <div className="btn-group">

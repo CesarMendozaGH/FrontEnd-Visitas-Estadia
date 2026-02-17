@@ -46,7 +46,7 @@ export const Sidebar = () => {
             <span className="material-symbols-outlined">
               list_alt_check
             </span>
-            Pasar Lista
+            Visitas rapidas
           </Link>
         </Nav.Item>
 
