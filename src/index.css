@@ -10,7 +10,7 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f8f9fa; /* Un gris muy suave de fondo */
+  background-color: #f8f9fa !important; /* Un gris muy suave de fondo */
   /* #f8f9fa gris claro */
 }
 

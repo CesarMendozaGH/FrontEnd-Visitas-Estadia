@@ -8,19 +8,22 @@ import Badge from 'react-bootstrap/Badge';
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import Form from 'react-bootstrap/Form';
 import Swal from 'sweetalert2'; // <--- Importamos SweetAlert
-import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch } from "react-icons/md";
+import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit } from "react-icons/md";
 
 export function ComunitarioPage() {
     const [perfiles, setPerfiles] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     // Estados de Modales
     const [showModal, setShowModal] = useState(false);
     const [showEntradaModal, setShowEntradaModal] = useState(false);
-    
+
     // Estados de Selección
     const [perfilSeleccionado, setPerfilSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState('');
+
+    // Estado para saber a quién vamos a editar
+    const [perfilAEditar, setPerfilAEditar] = useState(null);
 
     useEffect(() => {
         cargarPerfiles();
@@ -49,6 +52,18 @@ export function ComunitarioPage() {
         }
     };
 
+    // Función para abrir modal en modo CREAR (Botón Nuevo)
+    const abrirModalCreacion = () => {
+        setPerfilAEditar(null); // Limpiamos los datos
+        setShowModal(true);
+    };
+
+    // Función para abrir modal en modo EDITAR (Botón en la tabla)
+    const abrirModalEdicion = (perfil) => {
+        setPerfilAEditar(perfil); // Le pasamos los datos del infractor
+        setShowModal(true);
+    };
+
     // --- ACCIONES DE ASISTENCIA (LÓGICA CORREGIDA) ---
 
     // 1. Abrir el Modal
@@ -61,9 +76,9 @@ export function ComunitarioPage() {
     const procesarEntrada = async (perfilId, horas) => {
         // NOTA: No usamos try/catch aquí porque el Modal ya maneja los errores
         // y nos interesa que si falla, el modal NO se cierre.
-        
+
         await comunitarioService.registrarEntrada(perfilId, horas);
-        
+
         // Alerta Bonita con SweetAlert2
         Swal.fire({
             title: "¡Entrada Registrada!",
@@ -93,13 +108,13 @@ export function ComunitarioPage() {
         if (result.isConfirmed) {
             try {
                 const resultado = await comunitarioService.registrarSalida(perfil.idPerfilComunitario);
-                
+
                 Swal.fire({
                     title: '¡Salida Exitosa!',
                     html: `Horas sumadas hoy: <b>${resultado.horasSumadas}</b><br/>Nuevo acumulado: <b>${resultado.totalAcumulado}</b>`,
                     icon: 'success'
                 });
-                
+
                 cargarPerfiles();
             } catch (error) {
                 Swal.fire('Error', error.response?.data || "No se pudo registrar la salida", 'error');
@@ -107,17 +122,29 @@ export function ComunitarioPage() {
         }
     };
 
-    // --- CREACIÓN DE PERFIL ---
-    const handleCreate = async (formData) => {
+    const handleSavePerfil = async (formData) => {
         try {
-            await comunitarioService.create(formData);
+            if (formData.idPerfilComunitario === 0) {
+                // CREAR
+                await comunitarioService.create(formData);
+                Swal.fire("Creado", "Expediente creado correctamente", "success");
+            } else {
+                // EDITAR: Esta es la magia para que no se borren las horas
+                const payloadCompleto = {
+                    ...perfilAEditar, // 1. Tomamos TODOS los datos originales (incluyendo HorasAcumuladasActuales)
+                    ...formData       // 2. Sobreescribimos solo lo que se editó en el form (Nombre, Apellidos)
+                };
+                
+                await comunitarioService.update(formData.idPerfilComunitario, payloadCompleto);
+                Swal.fire("Actualizado", "Datos guardados correctamente", "success");
+            }
             setShowModal(false);
             cargarPerfiles();
-            Swal.fire("Creado", "Expediente creado correctamente", "success");
         } catch (error) {
-            Swal.fire("Error", error.response?.data, "error");
+            Swal.fire("Error", error.response?.data || "Ocurrió un error", "error");
         }
     };
+
 
     // Calcular porcentaje
     const getProgreso = (actual, total) => {
@@ -132,18 +159,18 @@ export function ComunitarioPage() {
                 <h2>Servicio Comunitario</h2>
 
                 <div className="d-flex gap-2">
-                     <Button variant="outline-primary" onClick={() => setShowModal(true)}>
+                    <Button variant="primary" onClick={abrirModalCreacion}>
                         <MdPersonAdd /> Nuevo
                     </Button>
                     <Form onSubmit={handleSearch} className="d-flex gap-2">
-                        <Form.Control 
-                            placeholder="Buscar por nombre..." 
+                        <Form.Control
+                            placeholder="Buscar por nombre..."
                             value={busqueda}
                             onChange={(e) => setBusqueda(e.target.value)}
                         />
                         <Button variant="outline-secondary" type="submit"><MdSearch /></Button>
                     </Form>
-                   
+
                 </div>
             </div>
 
@@ -154,7 +181,7 @@ export function ComunitarioPage() {
                         <tr>
                             <th>ID</th>
                             <th>Nombre Completo</th>
-                            <th style={{width: '30%'}}>Progreso Horas</th>
+                            <th style={{ width: '30%' }}>Progreso Horas</th>
                             <th className="text-center">Deuda</th>
                             <th className="text-center">Control Asistencia</th>
                         </tr>
@@ -170,10 +197,10 @@ export function ComunitarioPage() {
                                     </td>
                                     <td>
                                         <div className="d-flex align-items-center gap-2">
-                                            <ProgressBar 
-                                                now={porcentaje} 
-                                                variant={porcentaje >= 100 ? "success" : "warning"} 
-                                                style={{height: '10px', flexGrow: 1}} 
+                                            <ProgressBar
+                                                now={porcentaje}
+                                                variant={porcentaje >= 100 ? "success" : "warning"}
+                                                style={{ height: '10px', flexGrow: 1 }}
                                             />
                                             <small>{p.horasAcumuladasActuales} / {p.horasTotalesDeuda}</small>
                                         </div>
@@ -185,16 +212,24 @@ export function ComunitarioPage() {
                                     </td>
                                     <td className="text-center">
                                         <div className="btn-group">
-                                            <Button  
-                                                variant="outline-success" 
+                                            <Button
+                                                variant="outline-primary"
                                                 size="sm"
-                                                onClick={() => handleEntradaClick(p)} // <--- Aquí usamos la función del Modal
+                                                onClick={() => abrirModalEdicion(p)}
+                                                title="Editar Expediente"
+                                            >
+                                                <MdEdit /> Editar
+                                            </Button>
+                                            <Button
+                                                variant="outline-success"
+                                                size="sm"
+                                                onClick={() => handleEntradaClick(p)}
                                                 title="Registrar Entrada"
                                             >
                                                 <MdPlayArrow /> Entrada
                                             </Button>
-                                            <Button 
-                                                variant="outline-danger" 
+                                            <Button
+                                                variant="outline-danger"
                                                 size="sm"
                                                 onClick={() => handleSalida(p)}
                                                 title="Registrar Salida"
@@ -211,10 +246,11 @@ export function ComunitarioPage() {
             </div>
 
             {/* Modal de Alta de Perfil */}
-            <ComunitarioForm 
-                show={showModal} 
-                handleClose={() => setShowModal(false)} 
-                handleSave={handleCreate} 
+            <ComunitarioForm
+                show={showModal}
+                handleClose={() => setShowModal(false)}
+                handleSave={handleSavePerfil}
+                perfilEditar={perfilAEditar}
             />
 
             {/* NUEVO: Modal de Entrada (Conectado) */}

@@ -48,19 +48,12 @@ export const comunitarioService = {
         return response.data;
     },
 
-    // 6. Modificar Perfil (PUT)
+  // 6. Modificar Perfil (PUT)
     update: async (id, data) => {
-        // Ajustamos los nombres para que coincidan con el modelo de C#
         const payload = {
-            idPerfilComunitario: id,
-            nombre: data.nombre,
-            apellidoPaterno: data.apellidoPaterno,
-            apellidoMaterno: data.apellidoMaterno || "",
+            ...data,
             horasTotalesDeuda: parseInt(data.horasTotalesDeuda),
-            // Mantenemos los datos viejos que no se editan en el form
-            horasAcumuladasActuales: data.horasAcumuladasActuales, 
-            estatusServicio: data.estatusServicio,
-            fechaRegistro: data.fechaRegistro
+            horasAcumuladasActuales: parseInt(data.horasAcumuladasActuales) // <--- Aseguramos que sea número
         };
         const response = await api.put(`/Comunitario/modificar-perfil/${id}`, payload);
         return response.data;
