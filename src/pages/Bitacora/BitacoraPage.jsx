@@ -6,10 +6,11 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import { MdHistory, MdExitToApp, MdPersonSearch, MdPersonAdd } from "react-icons/md";
+import Swal from 'sweetalert2'; // <--- IMPORTANTE
 
 export function BitacoraPage() {
     const [visitas, setVisitas] = useState([]);
-    const [filtroFecha, setFiltroFecha] = useState(new Date().toISOString().split('T')[0]); // Fecha de hoy
+    const [filtroFecha, setFiltroFecha] = useState(new Date().toISOString().split('T')[0]); 
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
@@ -21,50 +22,81 @@ export function BitacoraPage() {
         setLoading(true);
         try {
             const data = await visitasService.getAll();
-            console.log('Datos recibidos del backend:', data);
-            // Ordenamos para ver las más recientes primero
             const ordenadas = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             setVisitas(ordenadas);
-            console.log('Visitas ordenadas:', ordenadas);
         } catch (error) {
             console.error("Error cargando bitácora:", error);
+            // Opcional: Mostrar error discreto
         } finally {
             setLoading(false);
         }
     };
 
     const handleMarcarSalida = async (visita) => {
-        if (window.confirm(`¿Confirmar salida de ${visita.nombreVisitante}?`)) {
+        // CONFIRMACIÓN CON SWEETALERT
+        const result = await Swal.fire({
+            title: `¿Registrar salida?`,
+            text: `Visitante: ${visita.nombreVisitante}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107', // Color warning para combinar con el botón
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, registrar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await visitasService.marcarSalida(visita.idBitacoraVisitas);
-                cargarVisitas(); // Recargamos para ver el cambio
+                
+                // ÉXITO RÁPIDO (Toast)
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Salida registrada',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                
+                cargarVisitas();
             } catch (error) {
                 console.error(error);
-                alert("No se pudo registrar la salida. Revisa la consola.");
+                Swal.fire('Error', 'No se pudo registrar la salida.', 'error');
             }
         }
     };
 
     const handleRegistrarVista = async (data) => {
-        await visitasService.create(data);
-        await cargarVisitas();
-        alert("¡Vista registrada exitosamente!");
+        try {
+            await visitasService.create(data);
+            await cargarVisitas();
+            
+            Swal.fire({
+                title: '¡Visita Registrada!',
+                text: 'El acceso ha sido autorizado correctamente.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo crear el registro.', 'error');
+        }
     };
 
-    // LÓGICA CRÍTICA: Según tu backend, si horaEntrada == horaSalida, sigue adentro.
+    // LÓGICA CRÍTICA
     const estaEnSitio = (v) => {
-        if (!v.horaSalida) return true; // Si es null, sigue dentro
+        if (!v.horaSalida) return true;
         return v.horaEntrada === v.horaSalida;
     };
 
-    // Filtramos los datos según la fecha seleccionada
+    // Filtros
     const visitasFiltradas = visitas.filter(visita => {
         if (!visita.createdAt) return false;
-        // Extraemos la fecha en formato YYYY-MM-DD del ISO timestamp
         const fechaVisita = visita.createdAt.split('T')[0];
         return fechaVisita === filtroFecha;
     });
-    console.log('Total visitas:', visitas.length, 'Filtradas:', visitasFiltradas.length);
 
     return (
         <div>
@@ -75,8 +107,6 @@ export function BitacoraPage() {
                 </h2>
 
                 <div className="d-flex align-items-center gap-2">
-                    {/* Botón para registrar nueva visita */}
-                    
                     <Button className='d-flex align-items-center' variant='outline-primary' onClick={() => setShowModal(true)}>
                         <p className='mb-0 mx-2'> Registrar visita</p>
                         <MdPersonAdd size={24} className='m-2'/>
@@ -98,7 +128,7 @@ export function BitacoraPage() {
                 </div>
             </div>
 
-            {/* Tabla de Registros */}
+            {/* Tabla */}
             <div className="table-responsive shadow-sm rounded bg-white">
                 <Table hover className="mb-0 align-middle">
                     <thead className="table-light">
@@ -122,12 +152,10 @@ export function BitacoraPage() {
                                 return (
                                     <tr key={item.idBitacoraVisitas}>
                                         <td className="text-center font-monospace fw-bold text-primary">
-                                            {/* Cortamos para mostrar solo HH:MM */}
                                             {item.horaEntrada?.substring(0, 5)}
                                         </td>
                                         <td>
                                             <div className="fw-bold">{item.nombreVisitante}</div>
-                                            {/* Si tuviéramos empresa, iría aquí debajo */}
                                         </td>
                                         <td className="text-muted middle">{item.motivoVisita}</td>
 
@@ -153,6 +181,7 @@ export function BitacoraPage() {
                                                     size="sm"
                                                     onClick={() => handleMarcarSalida(item)}
                                                     className="d-flex align-items-center gap-1 mx-auto"
+                                                    title="Registrar Salida"
                                                 >
                                                     <MdExitToApp /> Salida
                                                 </Button>
@@ -166,7 +195,6 @@ export function BitacoraPage() {
                 </Table>
             </div>
 
-            {/* Modal para registrar visitas */}
             <RegistrarVisitaModal
                 show={showModal}
                 handleClose={() => setShowModal(false)}

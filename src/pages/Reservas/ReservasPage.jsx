@@ -6,22 +6,29 @@ import { ReservasAsistentesModal } from './ReservasAsistentesModal';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
-import { MdAdd, MdEdit, MdDelete, MdPersonAdd } from "react-icons/md";
+import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck } from "react-icons/md";
+import Swal from 'sweetalert2'; // <--- IMPORTANTE
 
 export function ReservasPage() {
     const [reservas, setReservas] = useState([]);
     const [espacios, setEspacios] = useState([]);
     const [loading, setLoading] = useState(false);
-    
-    // Estados para el Modal de Reserva
+
     const [showModal, setShowModal] = useState(false);
     const [editingReserva, setEditingReserva] = useState(null);
 
-    // Estados para el Modal de Asistentes
     const [showAsistentesModal, setShowAsistentesModal] = useState(false);
     const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
 
-    // Cargar datos al inicio
+    // Forzar re-renderizado cada minuto para actualizar estatus de tiempo
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTick(t => t + 1); // Esto solo obliga a React a repintar la pantalla
+        }, 60000); // Cada 60 segundos
+        return () => clearInterval(timer);
+    }, []);
+
     useEffect(() => {
         cargarReservas();
         cargarEspacios();
@@ -31,11 +38,10 @@ export function ReservasPage() {
         setLoading(true);
         try {
             const data = await reservasService.getAll();
-            // Mostrar todas las reservas (activas e inactivas)
             setReservas(data);
         } catch (error) {
             console.error("Error al cargar reservas:", error);
-            alert("Error al cargar la lista de reservas");
+            // No bloqueamos con alert, solo log
         } finally {
             setLoading(false);
         }
@@ -51,7 +57,6 @@ export function ReservasPage() {
         }
     };
 
-    // --- MANEJO DEL MODAL DE RESERVA ---
     const handleOpenCreate = () => {
         setEditingReserva(null);
         setShowModal(true);
@@ -67,7 +72,6 @@ export function ReservasPage() {
         setEditingReserva(null);
     };
 
-    // --- MANEJO DEL MODAL DE ASISTENTES ---
     const handleOpenAsistentes = (reserva) => {
         setReservaSeleccionada(reserva);
         setShowAsistentesModal(true);
@@ -78,56 +82,61 @@ export function ReservasPage() {
         setReservaSeleccionada(null);
     };
 
-    // --- OPERACIONES CRUD ---
     const handleSaveReserva = async (formData, estatusReserva) => {
         try {
             if (formData.idReserva === 0) {
-                // CREAR
                 await reservasService.create(formData);
+                Swal.fire('Reserva Creada', 'Se ha registrado la reserva exitosamente.', 'success');
             } else {
-                // EDITAR - preservar el estatus actual
                 await reservasService.update(formData.idReserva, {
                     ...formData,
                     estatusReserva: estatusReserva
                 });
+                Swal.fire('Reserva Actualizada', 'Los datos han sido guardados.', 'success');
             }
             handleCloseModal();
             cargarReservas();
         } catch (error) {
             console.error("Error al guardar reserva:", error);
-            // Mostrar mensaje de error del backend si existe
             const errorMsg = error.response?.data || "No se pudo guardar la reserva.";
-            alert(errorMsg);
+            Swal.fire('Error', errorMsg, 'error');
         }
     };
 
     const handleCancelarReserva = async (id) => {
-        if (window.confirm("¿Seguro que deseas cancelar esta reserva?")) {
+        const result = await Swal.fire({
+            title: '¿Cancelar Reserva?',
+            text: "El estatus cambiará a 'Cancelada' y el espacio quedará libre.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, cancelar',
+            cancelButtonText: 'Volver'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await reservasService.cancelar(id);
-                cargarReservas();
+                await cargarReservas();
+                Swal.fire('Cancelada', 'La reserva ha sido cancelada.', 'success');
             } catch (error) {
                 console.error("Error al cancelar reserva:", error);
-                alert("Error al intentar cancelar la reserva.");
+                Swal.fire('Error', 'No se pudo cancelar la reserva.', 'error');
             }
         }
     };
 
-    // Obtener nombre del espacio (busca en el objeto includo o en la lista local)
     const getEspacioNombre = (item) => {
-        // Primero intentar obtener del objeto espacio incluido por el backend
         if (item.espacio?.nombre) {
             return item.espacio.nombre;
         }
-        // Si no, buscar en la lista local de espacios
         const espacio = espacios.find(e => e.idEspacios === item.espacioId);
         return espacio?.nombre || `ID: ${item.espacioId}`;
     };
 
-    // Formatear fecha para mostrar en formato DD/MM/YYYY
     const formatFecha = (fechaISO) => {
         if (!fechaISO) return "-";
-        // Convertir directamente sin convertir a UTC
         const fecha = new Date(fechaISO);
         const day = String(fecha.getDate()).padStart(2, '0');
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -137,9 +146,43 @@ export function ReservasPage() {
         return `${day}/${month}/${year} ${hours}:${minutes}`;
     };
 
+
+
+    // Función para calcular el estado en tiempo real
+    const getEstadoReserva = (reserva) => {
+        // 1. Si ya estaba cancelada en BD, se queda cancelada
+        if (reserva.estatusReserva === false) {
+            return { texto: "Cancelada", color: "danger", finalizada: true };
+        }
+
+        const ahora = new Date();
+        const inicio = new Date(reserva.fechaInicio);
+        const fin = new Date(reserva.fechaFin);
+
+        // 2. Si la hora actual es mayor al fin -> COMPLETADA
+        if (ahora > fin) {
+            return { texto: "Completada", color: "secondary", finalizada: true };
+        }
+
+        // 3. Si estamos dentro del rango -> EN CURSO
+        if (ahora >= inicio && ahora <= fin) {
+            return {
+                texto: "En Curso",
+                color: "primary", // Azul o el color que prefieras
+                finalizada: false,
+                animado: true // Para ponerle un efectito visual
+
+            };
+        }
+
+        // 4. Si aún no empieza -> PROGRAMADA (Activa)
+        return { texto: "Programada", color: "success", finalizada: false };
+    };
+
+
+
     return (
         <div>
-            {/* Encabezado con Botón Agregar */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Gestión de Reservas</h2>
                 <Button className='btn' variant="outline-primary" onClick={handleOpenCreate}>
@@ -147,7 +190,6 @@ export function ReservasPage() {
                 </Button>
             </div>
 
-            {/* Tabla de Datos */}
             <div className="table-responsive shadow-sm rounded bg-white">
                 <Table hover className="mb-0 align-middle">
                     <thead className="table-light">
@@ -169,78 +211,107 @@ export function ReservasPage() {
                         ) : reservas.length === 0 ? (
                             <tr><td colSpan="9" className="text-center py-4">No hay reservas registradas.</td></tr>
                         ) : (
-                            reservas.map((item) => (
-                                <tr 
-                                    key={item.idReserva}
-                                    style={{ 
-                                        opacity: item.estatusReserva === false ? 0.6 : 1,
-                                        backgroundColor: item.estatusReserva === false ? '#f8f9fa' : 'transparent'
-                                    }}
-                                >
-                                    <td>{item.idReserva}</td>
-                                    <td className="fw-bold">{getEspacioNombre(item)}</td>
-                                    <td>{item.nombreReservante}</td>
-                                    <td>{item.areaReservante}</td>
-                                    <td>{formatFecha(item.fechaInicio)}</td>
-                                    <td>{formatFecha(item.fechaFin)}</td>
-                                    <td className="text-center">
-                                        <Badge bg="info" text="dark" pill>
-                                            {item.numeroPersonas}
-                                        </Badge>
-                                    </td>
-                                    <td className="text-center">
-                                        <Badge bg={item.estatusReserva ? "success" : "danger"}>
-                                            {item.estatusReserva ? "Activa" : "Cancelada"}
-                                        </Badge>
-                                    </td>
-                                    <td className="text-center">
-                                        <Button 
-                                            variant="outline-primary" 
-                                            size="sm" 
-                                            className="me-2"
-                                            onClick={() => handleOpenEdit(item)}
-                                            title="Editar"
-                                        >
-                                            <MdEdit />
-                                        </Button>
-                                        <Button 
-                                            variant="outline-secondary" 
-                                            size="sm" 
-                                            className="me-2"
-                                            onClick={() => handleOpenAsistentes(item)}
-                                            title="Agregar Asistentes"
-                                        >
-                                            <MdPersonAdd />
-                                        </Button>
-                                        {item.estatusReserva && (
-                                            <Button 
-                                                variant="outline-danger" 
-                                                size="sm"
-                                                onClick={() => handleCancelarReserva(item.idReserva)}
-                                                title="Cancelar Reserva"
+                            reservas.map((item) => {
+                                // Calculamos el estado de esta fila
+                                const estado = getEstadoReserva(item);
+
+                                return (
+                                    <tr
+                                        key={item.idReserva}
+                                        style={{
+                                            // Bajamos la opacidad si está cancelada o completada
+                                            opacity: estado.finalizada ? 0.6 : 1,
+                                            backgroundColor: estado.texto === "Cancelada" ? '#fff5f5' : 'transparent'
+                                        }}
+                                    >
+                                        <td>{item.idReserva}</td>
+                                        <td className="fw-bold">{getEspacioNombre(item)}</td>
+                                        <td>{item.nombreReservante}</td>
+                                        <td>{item.areaReservante}</td>
+                                        <td>{formatFecha(item.fechaInicio)}</td>
+                                        <td>{formatFecha(item.fechaFin)}</td>
+                                        <td className="text-center">
+                                            <Badge bg="info" text="dark" pill>
+                                                {item.numeroPersonas}
+                                            </Badge>
+                                        </td>
+
+                                        {/* COLUMNA DE ESTATUS DINÁMICO */}
+                                        <td className="text-center">
+                                            <Badge
+                                                bg={estado.color}
+                                                // Usamos d-inline-flex para que no se estire a lo ancho de toda la celda
+                                                className={estado.animado ? "d-inline-flex align-items-center gap-1 faa-pulse animated" : ""}
+                                                style={{ verticalAlign: 'middle' }} // Asegura centrado perfecto con la línea
                                             >
-                                                <MdDelete />
-                                            </Button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
+                                                {estado.animado && (
+                                                    <span
+                                                        className="spinner-grow spinner-grow-sm"
+                                                        style={{ width: '6px', height: '6px' }} // Ajusté un poco el tamaño para que sea más sutil
+                                                        role="status"
+                                                        aria-hidden="true"
+                                                    ></span>
+                                                )}
+                                                {estado.texto}
+                                            </Badge>
+                                        </td>
+
+                                        {/* ACCIONES (BLOQUEADAS SI YA TERMINÓ) */}
+                                        <td className="text-center">
+                                            {/* Solo permitimos editar/agregar si NO ha finalizado */}
+                                            {!estado.finalizada && (
+                                                <>
+                                                    <Button
+                                                        variant="outline-primary"
+                                                        size="sm"
+                                                        className="me-2"
+                                                        onClick={() => handleOpenEdit(item)}
+                                                        title="Editar"
+                                                    >
+                                                        <MdEdit />
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-secondary"
+                                                        size="sm"
+                                                        className="me-2"
+                                                        onClick={() => handleOpenAsistentes(item)}
+                                                        title="Gestionar Asistentes"
+                                                    >
+                                                        <MdPersonAdd />
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        onClick={() => handleCancelarReserva(item.idReserva)}
+                                                        title="Cancelar Reserva"
+                                                    >
+                                                        <MdDelete />
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {/* Si ya acabó, mostramos un ícono o texto discreto */}
+                                            {estado.texto === "Completada" && (
+                                                <span className="text-muted small"><MdCheck /> Finalizada</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </Table>
             </div>
 
-            {/* Componente Modal (Formulario de Reserva) */}
-            <ReservasForm 
-                show={showModal} 
-                handleClose={handleCloseModal} 
+            <ReservasForm
+                show={showModal}
+                handleClose={handleCloseModal}
                 handleSave={handleSaveReserva}
                 reservaEditar={editingReserva}
                 reservaEstatus={editingReserva?.estatusReserva}
                 espacios={espacios}
             />
 
-            {/* Componente Modal (Gestión de Asistentes) */}
             <ReservasAsistentesModal
                 show={showAsistentesModal}
                 handleClose={handleCloseAsistentesModal}

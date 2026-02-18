@@ -4,17 +4,16 @@ import { EspaciosForm } from './EspaciosForm';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md"; // Asegúrate de tener react-icons
+import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import Swal from 'sweetalert2'; // <--- IMPORTANTE
 
 export function EspaciosPage() {
     const [espacios, setEspacios] = useState([]);
     const [loading, setLoading] = useState(false);
     
-    // Estados para el Modal
     const [showModal, setShowModal] = useState(false);
     const [editingEspacio, setEditingEspacio] = useState(null);
 
-    // Cargar datos al inicio
     useEffect(() => {
         cargarEspacios();
     }, []);
@@ -23,20 +22,18 @@ export function EspaciosPage() {
         setLoading(true);
         try {
             const data = await espaciosService.getAll();
-            // Filtramos en el front por si el backend devuelve los borrados lógicos
             const activos = data.filter(e => e.activo !== false); 
             setEspacios(activos);
         } catch (error) {
             console.error("Error al cargar:", error);
-            alert("Error al cargar la lista de espacios");
+            Swal.fire('Error', 'No se pudo cargar la lista de espacios.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    // --- MANEJO DEL MODAL ---
     const handleOpenCreate = () => {
-        setEditingEspacio(null); // Null significa "Crear Nuevo"
+        setEditingEspacio(null);
         setShowModal(true);
     };
 
@@ -50,39 +47,50 @@ export function EspaciosPage() {
         setEditingEspacio(null);
     };
 
-    // --- OPERACIONES CRUD ---
     const handleSave = async (formData) => {
         try {
             if (formData.idEspacios === 0) {
-                // CREAR
                 await espaciosService.create(formData);
+                Swal.fire('Creado', 'El espacio ha sido registrado.', 'success');
             } else {
-                // EDITAR
                 await espaciosService.update(formData.idEspacios, formData);
+                Swal.fire('Actualizado', 'Los cambios han sido guardados.', 'success');
             }
             handleCloseModal();
-            cargarEspacios(); // Recargar la tabla
+            cargarEspacios();
         } catch (error) {
             console.error("Error al guardar:", error);
-            alert("No se pudo guardar el espacio.");
+            Swal.fire('Error', 'No se pudo guardar el espacio.', 'error');
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar este espacio?")) {
+        // CONFIRMACIÓN ROJA PARA BORRAR
+        const result = await Swal.fire({
+            title: '¿Eliminar espacio?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await espaciosService.delete(id);
-                cargarEspacios();
+                await cargarEspacios();
+                Swal.fire('Eliminado', 'El espacio ha sido eliminado.', 'success');
             } catch (error) {
                 console.error("Error al eliminar:", error);
-                alert("Error al intentar eliminar.");
+                Swal.fire('Error', 'Ocurrió un problema al intentar eliminar.', 'error');
             }
         }
     };
 
     return (
         <div>
-            {/* Encabezado con Botón Agregar */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Gestión de Espacios</h2>
                 <Button variant="outline-primary" onClick={handleOpenCreate}>
@@ -90,7 +98,6 @@ export function EspaciosPage() {
                 </Button>
             </div>
 
-            {/* Tabla de Datos */}
             <div className="table-responsive shadow-sm rounded bg-white">
                 <Table hover className="mb-0 align-middle">
                     <thead className="table-light">
@@ -103,15 +110,14 @@ export function EspaciosPage() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="5" className="text-center py-4">Cargando...</td></tr>
+                            <tr><td colSpan="4" className="text-center py-4">Cargando...</td></tr>
                         ) : espacios.length === 0 ? (
-                            <tr><td colSpan="5" className="text-center py-4">No hay espacios registrados.</td></tr>
+                            <tr><td colSpan="4" className="text-center py-4">No hay espacios registrados.</td></tr>
                         ) : (
                             espacios.map((item) => (
                                 <tr key={item.idEspacios}>
                                     <td>{item.idEspacios}</td>
                                     <td className="fw-bold">{item.nombre}</td>
-                                   
                                     <td className="text-center">
                                         <Badge bg="info" text="dark" pill>
                                             {item.capacidad} Personas
@@ -123,6 +129,7 @@ export function EspaciosPage() {
                                             size="sm" 
                                             className="me-2"
                                             onClick={() => handleOpenEdit(item)}
+                                            title="Editar"
                                         >
                                             <MdEdit />
                                         </Button>
@@ -130,6 +137,7 @@ export function EspaciosPage() {
                                             variant="outline-danger" 
                                             size="sm"
                                             onClick={() => handleDelete(item.idEspacios)}
+                                            title="Eliminar"
                                         >
                                             <MdDelete />
                                         </Button>
@@ -141,7 +149,6 @@ export function EspaciosPage() {
                 </Table>
             </div>
 
-            {/* Componente Modal (Formulario) */}
             <EspaciosForm 
                 show={showModal} 
                 handleClose={handleCloseModal} 

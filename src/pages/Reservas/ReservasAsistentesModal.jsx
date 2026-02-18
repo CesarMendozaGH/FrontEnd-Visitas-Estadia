@@ -5,6 +5,7 @@ import Button from 'react-bootstrap/Button';
 import Table from 'react-bootstrap/Table';
 import { reservasService } from '../../services/reservasServices';
 import { MdAdd, MdDelete, MdCheck } from "react-icons/md";
+import Swal from 'sweetalert2';
 
 export function ReservasAsistentesModal({ show, handleClose, reserva }) {
     const [asistentes, setAsistentes] = useState([]);
@@ -19,6 +20,7 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
     useEffect(() => {
         if (show && reserva) {
             cargarAsistentes();
+            setAsistentesTemp([]); // Limpiamos temporales al abrir
         }
     }, [show, reserva]);
 
@@ -61,7 +63,11 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
 
     const handleGuardarAsistentes = async () => {
         if (asistentesTemp.length === 0) {
-            alert("No hay asistentes nuevos para guardar.");
+            Swal.fire({
+                title: "No hay asistentes nuevos",
+                text: "Agrega al menos una persona a la lista temporal.",
+                icon: "warning"
+            });
             return;
         }
 
@@ -69,10 +75,21 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
             await reservasService.agregarAsistentes(reserva.idReserva, asistentesTemp);
             setAsistentesTemp([]);
             cargarAsistentes();
-            alert("Asistentes guardados correctamente.");
+            
+            Swal.fire({
+                title: "¡Guardado!",
+                text: "Asistentes registrados correctamente.",
+                icon: "success",
+                timer: 800,
+                showConfirmButton: false
+            });
         } catch (error) {
             console.error("Error al guardar asistentes:", error);
-            alert("Error al guardar asistentes.");
+            Swal.fire({
+                title: "Error",
+                text: "No se pudieron guardar los asistentes.",
+                icon: "error"
+            });
         }
     };
 
@@ -80,8 +97,25 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
         try {
             await reservasService.toggleAsistencia(idAsistente);
             cargarAsistentes();
+            // Opcional: Toast pequeño para confirmar acción rápida
+            /* Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Estatus actualizado',
+                showConfirmButton: false,
+                timer: 1000
+            }); */
         } catch (error) {
             console.error("Error al cambiar asistencia:", error);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: 'Error al cambiar estatus',
+                showConfirmButton: false,
+                timer: 1500
+            });
         }
     };
 
@@ -92,22 +126,35 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
             .map(a => a.idLista);
 
         if (idsPendientes.length === 0) {
-            alert("No hay asistentes pendientes por registrar.");
+            Swal.fire({
+                title: "Sin pendientes",
+                text: "Todos los asistentes ya tienen su asistencia registrada.",
+                icon: "info"
+            });
             return;
         }
 
         try {
             await reservasService.checkinMasivo(idsPendientes);
             cargarAsistentes();
-            alert("Asistencia masiva registrada.");
+
+            Swal.fire({
+                title: "¡Check-in Masivo!",
+                text: `Se registró la asistencia de ${idsPendientes.length} personas.`,
+                icon: "success"
+            });
         } catch (error) {
             console.error("Error en check-in masivo:", error);
-            alert("Error al registrar asistencia masiva.");
+            Swal.fire({
+                title: "Error",
+                text: "Hubo un problema al registrar las asistencias.",
+                icon: "error"
+            });
         }
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="xl">
+        <Modal show={show} onHide={handleClose} size="xl" backdrop="static">
             <Modal.Header closeButton>
                 <Modal.Title>
                     Gestión de Asistentes - Reserva #{reserva?.idReserva}
@@ -115,38 +162,38 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
             </Modal.Header>
             <Modal.Body>
                 {/* Formulario para agregar nuevos asistentes */}
-                <div className="bg-light p-3 rounded mb-4">
-                    <h6>Agregar Nuevo Asistente</h6>
+                <div className="bg-light p-3 rounded mb-4 border">
+                    <h6 className="fw-bold text-primary">Agregar Nuevo Asistente</h6>
                     <div className="row g-2 align-items-end">
                         <div className="col-md-4">
                             <Form.Label>Nombre *</Form.Label>
-                            <Form.Control 
+                            <Form.Control
                                 type="text"
                                 value={nuevoAsistente.nombre}
                                 onChange={(e) => setNuevoAsistente(prev => ({ ...prev, nombre: e.target.value }))}
-                                placeholder="Nombre"
+                                placeholder="Ej. Juan"
                             />
                         </div>
                         <div className="col-md-3">
                             <Form.Label>Apellido Paterno *</Form.Label>
-                            <Form.Control 
+                            <Form.Control
                                 type="text"
                                 value={nuevoAsistente.apellidoPaterno}
                                 onChange={(e) => setNuevoAsistente(prev => ({ ...prev, apellidoPaterno: e.target.value }))}
-                                placeholder="Apellido paterno"
+                                placeholder="Ej. Pérez"
                             />
                         </div>
                         <div className="col-md-3">
                             <Form.Label>Apellido Materno</Form.Label>
-                            <Form.Control 
+                            <Form.Control
                                 type="text"
                                 value={nuevoAsistente.apellidoMaterno}
                                 onChange={(e) => setNuevoAsistente(prev => ({ ...prev, apellidoMaterno: e.target.value }))}
-                                placeholder="Apellido materno"
+                                placeholder="Ej. López"
                             />
                         </div>
                         <div className="col-md-2">
-                            <Button variant="primary" onClick={handleAddAsistente}>
+                            <Button variant="primary" onClick={handleAddAsistente} className="w-100">
                                 <MdAdd /> Agregar
                             </Button>
                         </div>
@@ -155,66 +202,66 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
 
                 {/* Lista temporal de asistentes nuevos */}
                 {asistentesTemp.length > 0 && (
-                    <div className="mb-4">
-                        <h6>Asistentes por Guardar ({asistentesTemp.length})</h6>
-                        <div className="d-flex flex-wrap gap-2">
+                    <div className="mb-4 p-3 border rounded border-warning bg-light">
+                        <h6 className="fw-bold text-warning">Por Guardar ({asistentesTemp.length})</h6>
+                        <div className="d-flex flex-wrap gap-2 mb-2">
                             {asistentesTemp.map((asistente, index) => (
-                                <div key={index} className="badge bg-primary d-flex align-items-center gap-2 p-2">
+                                <div key={index} className="badge bg-warning text-dark d-flex align-items-center gap-2 p-2 shadow-sm">
                                     <span>{asistente.nombre} {asistente.apellidoPaterno}</span>
-                                    <MdDelete 
+                                    <MdDelete
+                                        className="text-danger"
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => handleRemoveAsistenteTemp(index)}
+                                        title="Quitar"
                                     />
                                 </div>
                             ))}
                         </div>
-                        <Button 
-                            variant="success" 
-                            size="sm" 
-                            className="mt-2"
+                        <Button
+                            variant="success"
+                            size="sm"
                             onClick={handleGuardarAsistentes}
                         >
-                            Guardar {asistentesTemp.length} Asistentes
+                            <MdCheck /> Guardar estos {asistentesTemp.length} Asistentes
                         </Button>
                     </div>
                 )}
 
                 {/* Tabla de asistentes registrados */}
-                <h6>Asistentes Registrados ({asistentes.length})</h6>
-                <div className="table-responsive">
-                    <Table striped bordered hover size="sm">
-                        <thead>
+                <h6 className="fw-bold mt-4">Lista Oficial ({asistentes.length})</h6>
+                <div className="table-responsive shadow-sm border rounded">
+                    <Table striped hover size="sm" className="mb-0 align-middle">
+                        <thead className="table-light">
                             <tr>
-                                <th>ID</th>
                                 <th>Nombre Completo</th>
-                                <th>Asistió</th>
-                                <th>Acciones</th>
+                                <th className="text-center">Estado</th>
+                                <th className="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="4" className="text-center">Cargando...</td></tr>
+                                <tr><td colSpan="3" className="text-center py-3">Cargando...</td></tr>
                             ) : asistentes.length === 0 ? (
-                                <tr><td colSpan="4" className="text-center">No hay asistentes registrados.</td></tr>
+                                <tr><td colSpan="3" className="text-center py-3 text-muted">No hay asistentes registrados aún.</td></tr>
                             ) : (
                                 asistentes.map((asistente) => (
                                     <tr key={asistente.idLista}>
-                                        <td>{asistente.idLista}</td>
-                                        <td>
+                                        <td className="fw-500">
                                             {asistente.nombre} {asistente.apellidoPaterno} {asistente.apellidoMaterno}
                                         </td>
-                                        <td>
-                                            <span className={`badge ${asistente.asistio ? 'bg-success' : 'bg-warning text-dark'}`}>
-                                                {asistente.asistio ? 'Sí' : 'No'}
+                                        <td className="text-center">
+                                            <span className={`badge rounded-pill ${asistente.asistio ? 'bg-success' : 'bg-secondary'}`}>
+                                                {asistente.asistio ? 'ASISTIÓ' : 'PENDIENTE'}
                                             </span>
                                         </td>
-                                        <td>
-                                            <Button 
-                                                variant={asistente.asistio ? "outline-warning" : "outline-success"}
+                                        <td className="text-center">
+                                            <Button
+                                                variant={asistente.asistio ? "outline-secondary" : "outline-success"}
                                                 size="sm"
                                                 onClick={() => handleToggleAsistencia(asistente.idLista)}
+                                                title={asistente.asistio ? "Marcar como no asistió" : "Marcar asistencia"}
                                             >
-                                                <MdCheck /> {asistente.asistio ? 'Cancelar' : 'Registrar'}
+                                                {asistente.asistio ? 'Desmarcar' : 'Check-In'}
                                             </Button>
                                         </td>
                                     </tr>
@@ -225,18 +272,19 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
                 </div>
 
                 {asistentes.length > 0 && (
-                    <Button 
-                        variant="outline-primary" 
-                        onClick={handleCheckinMasivo}
-                        className="mt-2"
-                    >
-                        Marcar Todos como Asistidos
-                    </Button>
+                    <div className="mt-3 text-end">
+                        <Button
+                            variant="outline-primary"
+                            onClick={handleCheckinMasivo}
+                        >
+                            <MdCheck /> Marcar Todos como Asistidos
+                        </Button>
+                    </div>
                 )}
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={handleClose}>
-                    Cerrar
+                    Cerrar Ventana
                 </Button>
             </Modal.Footer>
         </Modal>
