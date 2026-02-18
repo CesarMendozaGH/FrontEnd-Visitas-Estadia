@@ -167,7 +167,7 @@ export function ReservasPage() {
         // 3. Si estamos dentro del rango -> EN CURSO
         if (ahora >= inicio && ahora <= fin) {
             return {
-                texto: "En Curso",
+                texto: " En Curso",
                 color: "primary", // Azul o el color que prefieras
                 finalizada: false,
                 animado: true // Para ponerle un efectito visual

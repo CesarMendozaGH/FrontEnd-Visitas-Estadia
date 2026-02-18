@@ -209,7 +209,7 @@ export function ComunitarioPage() {
                                         {p.horasAcumuladasActuales >= p.horasTotalesDeuda ? (
                                             <Badge bg="success">
                                                 {p.horasAcumuladasActuales > p.horasTotalesDeuda
-                                                    ? `+${p.horasAcumuladasActuales - p.horasTotalesDeuda} h extra`
+                                                    ? `+${p.horasAcumuladasActuales - p.horasTotalesDeuda} h extra realizadas`
                                                     : "0 h restantes"
                                                 }
                                             </Badge>
