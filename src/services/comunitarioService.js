@@ -48,7 +48,7 @@ export const comunitarioService = {
         return response.data;
     },
 
-  // 6. Modificar Perfil (PUT)
+    // 6. Modificar Perfil (PUT)
     update: async (id, data) => {
         const payload = {
             ...data,
@@ -59,10 +59,39 @@ export const comunitarioService = {
         return response.data;
     },
 
+
+
     // 7. Desactivar/Reactivar (PUT)
     toggleStatus: async (id) => {
         const response = await api.put(`/Comunitario/cambiar-estatus/${id}`);
         return response.data;
-    }
+    },
 
+    // ==========================================
+    // NUEVAS FUNCIONES PARA ARCHIVOS Y REPORTES
+    // ==========================================
+
+    // 8. Subir Evidencia (FormData)
+    subirEvidencia: async (formData) => {
+        const response = await api.post('/Comunitario/subir-evidencia', formData, {
+            headers: {
+                // Axios es inteligente, pero es buena práctica indicarle que mandamos archivos
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // 9. Generar y Descargar Reporte Excel (FormData y Blob)
+    generarReporteDiario: async (formData) => {
+        const response = await api.post('/Comunitario/generar-reporte', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            // ¡ESTO ES VITAL! Le dice a Axios que no intente leer el Excel como texto,
+            // sino que lo mantenga como un archivo binario puro (Blob).
+            responseType: 'blob',
+        });
+        return response.data;
+    }
 };

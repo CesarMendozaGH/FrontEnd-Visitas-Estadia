@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { comunitarioService } from '../../services/comunitarioService';
 import { ComunitarioForm } from './ComunitarioForm';
-import { ComunitarioEntradaModal } from './ComunitarioEntradaModal'; // <--- Importamos el nuevo modal
+import { ComunitarioEntradaModal } from './ComunitarioEntradaModal'; 
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import Form from 'react-bootstrap/Form';
-import Swal from 'sweetalert2'; // <--- Importamos SweetAlert
-import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit } from "react-icons/md";
+import Swal from 'sweetalert2'; 
+// AGREGAMOS MdFileDownload AL IMPORT DE ÍCONOS
+import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDock, MdDomainAdd } from "react-icons/md";
+
+// IMPORTS DE REPORTES
+import { ComunitarioEvidenciaModal } from './ComunitarioEvidenciaModal.jsx';
+import { ComunitarioReporteModal } from './ComunitarioReporteModal.jsx';
 
 export function ComunitarioPage() {
     const [perfiles, setPerfiles] = useState([]);
@@ -24,6 +29,11 @@ export function ComunitarioPage() {
 
     // Estado para saber a quién vamos a editar
     const [perfilAEditar, setPerfilAEditar] = useState(null);
+
+    // Estados para subir los modales de reportes
+    const [showEvidencia, setShowEvidencia] = useState(false);
+    const [showReporte, setShowReporte] = useState(false);
+    const [perfilEvidencia, setPerfilEvidencia] = useState(null);
 
     useEffect(() => {
         cargarPerfiles();
@@ -52,34 +62,23 @@ export function ComunitarioPage() {
         }
     };
 
-    // Función para abrir modal en modo CREAR (Botón Nuevo)
     const abrirModalCreacion = () => {
-        setPerfilAEditar(null); // Limpiamos los datos
+        setPerfilAEditar(null); 
         setShowModal(true);
     };
 
-    // Función para abrir modal en modo EDITAR (Botón en la tabla)
     const abrirModalEdicion = (perfil) => {
-        setPerfilAEditar(perfil); // Le pasamos los datos del infractor
+        setPerfilAEditar(perfil); 
         setShowModal(true);
     };
 
-    // --- ACCIONES DE ASISTENCIA (LÓGICA CORREGIDA) ---
-
-    // 1. Abrir el Modal
     const handleEntradaClick = (perfil) => {
         setPerfilSeleccionado(perfil);
         setShowEntradaModal(true);
     };
 
-    // 2. Procesar la confirmación del Modal
     const procesarEntrada = async (perfilId, horas) => {
-        // NOTA: No usamos try/catch aquí porque el Modal ya maneja los errores
-        // y nos interesa que si falla, el modal NO se cierre.
-
         await comunitarioService.registrarEntrada(perfilId, horas);
-
-        // Alerta Bonita con SweetAlert2
         Swal.fire({
             title: "¡Entrada Registrada!",
             text: "El tiempo empieza a correr ahora.",
@@ -87,13 +86,10 @@ export function ComunitarioPage() {
             timer: 2000,
             showConfirmButton: false
         });
-
-        cargarPerfiles(); // Recargamos la tabla para ver cambios
-        // El modal se cierra automáticamente desde el componente hijo al llamar a esta función
+        cargarPerfiles(); 
     };
 
     const handleSalida = async (perfil) => {
-        // Usamos SweetAlert para confirmar salida también
         const result = await Swal.fire({
             title: `¿Cerrar sesión de ${perfil.nombre}?`,
             text: "Se calcularán las horas reales trabajadas.",
@@ -108,13 +104,11 @@ export function ComunitarioPage() {
         if (result.isConfirmed) {
             try {
                 const resultado = await comunitarioService.registrarSalida(perfil.idPerfilComunitario);
-
                 Swal.fire({
                     title: '¡Salida Exitosa!',
                     html: `Horas sumadas hoy: <b>${resultado.horasSumadas}</b><br/>Nuevo acumulado: <b>${resultado.totalAcumulado}</b>`,
                     icon: 'success'
                 });
-
                 cargarPerfiles();
             } catch (error) {
                 Swal.fire('Error', error.response?.data || "No se pudo registrar la salida", 'error');
@@ -125,16 +119,13 @@ export function ComunitarioPage() {
     const handleSavePerfil = async (formData) => {
         try {
             if (formData.idPerfilComunitario === 0) {
-                // CREAR
                 await comunitarioService.create(formData);
                 Swal.fire("Creado", "Expediente creado correctamente", "success");
             } else {
-                // EDITAR: Esta es la magia para que no se borren las horas
                 const payloadCompleto = {
-                    ...perfilAEditar, // 1. Tomamos TODOS los datos originales (incluyendo HorasAcumuladasActuales)
-                    ...formData       // 2. Sobreescribimos solo lo que se editó en el form (Nombre, Apellidos)
+                    ...perfilAEditar, 
+                    ...formData       
                 };
-
                 await comunitarioService.update(formData.idPerfilComunitario, payloadCompleto);
                 Swal.fire("Actualizado", "Datos guardados correctamente", "success");
             }
@@ -145,11 +136,14 @@ export function ComunitarioPage() {
         }
     };
 
-
-    // Calcular porcentaje
     const getProgreso = (actual, total) => {
         if (!total) return 0;
         return Math.min(100, Math.round((actual / total) * 100));
+    };
+
+    const abrirModalEvidencia = (perfil) => {
+        setPerfilEvidencia(perfil);
+        setShowEvidencia(true);
     };
 
     return (
@@ -162,6 +156,12 @@ export function ComunitarioPage() {
                     <Button variant="primary" onClick={abrirModalCreacion}>
                         <MdPersonAdd /> Nuevo
                     </Button>
+
+                    <Button variant="success" onClick={() => setShowReporte(true)} className="d-flex align-items-center gap-2">
+                        <MdFileDownload size={20} />
+                        Generar Reporte Excel
+                    </Button>
+
                     <Form onSubmit={handleSearch} className="d-flex gap-2">
                         <Form.Control
                             placeholder="Buscar por nombre..."
@@ -170,13 +170,12 @@ export function ComunitarioPage() {
                         />
                         <Button variant="outline-secondary" type="submit"><MdSearch /></Button>
                     </Form>
-
                 </div>
             </div>
 
             {/* Tabla */}
             <div className="table-responsive shadow-sm rounded bg-white">
-                <Table hover className="mb-0 align-middle" class="table table-hover">
+                <Table hover className="mb-0 align-middle">
                     <thead className="table-light">
                         <tr>
                             <th>ID</th>
@@ -245,6 +244,16 @@ export function ComunitarioPage() {
                                             >
                                                 <MdStop /> Salida
                                             </Button>
+
+                                            {/* BOTÓN DESCOMENTADO Y ARREGLADO CON 'p' */}
+                                            <Button
+                                                variant="outline-dark"
+                                                size="sm"
+                                                onClick={() => abrirModalEvidencia(p)}
+                                                title="Subir evidencia fotográfica"
+                                            >
+                                               <MdAdd/> Subir Evidencia
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -254,7 +263,7 @@ export function ComunitarioPage() {
                 </Table>
             </div>
 
-            {/* Modal de Alta de Perfil */}
+            {/* ZONA DE MODALES (AQUÍ DEBEN IR SIEMPRE) */}
             <ComunitarioForm
                 show={showModal}
                 handleClose={() => setShowModal(false)}
@@ -262,12 +271,22 @@ export function ComunitarioPage() {
                 perfilEditar={perfilAEditar}
             />
 
-            {/* NUEVO: Modal de Entrada (Conectado) */}
             <ComunitarioEntradaModal
                 show={showEntradaModal}
                 handleClose={() => setShowEntradaModal(false)}
                 perfil={perfilSeleccionado}
                 onConfirmar={procesarEntrada}
+            />
+
+            <ComunitarioEvidenciaModal
+                show={showEvidencia}
+                handleClose={() => setShowEvidencia(false)}
+                perfil={perfilEvidencia}
+            />
+
+            <ComunitarioReporteModal
+                show={showReporte}
+                handleClose={() => setShowReporte(false)}
             />
         </div>
     );
