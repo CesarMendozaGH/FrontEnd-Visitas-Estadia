@@ -13,20 +13,11 @@ export const comunitarioService = {
         return response.data;
     },
 
-    // 3. Crear nuevo perfil (Alta de Infractor)
-    create: async (data) => {
-        // El backend espera: Nombre, Apellidos, HorasTotalesDeuda
-        const payload = {
-            idPerfilComunitario: 0,
-            nombre: data.nombre,
-            apellidoPaterno: data.apellidoPaterno,
-            apellidoMaterno: data.apellidoMaterno || "",
-            horasTotalesDeuda: parseInt(data.horasTotalesDeuda),
-            horasAcumuladasActuales: 0,
-            estatusServicio: "ACTIVO",
-            fechaRegistro: new Date().toISOString().split('T')[0] // Fecha YYYY-MM-DD
-        };
-        const response = await api.post('/Comunitario/crear-perfil', payload);
+    // 3. Crear nuevo perfil (Alta de Infractor) AHORA CON MULTIPART
+    create: async (formData) => {
+        const response = await api.post('/Comunitario/crear-perfil', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 
@@ -48,14 +39,11 @@ export const comunitarioService = {
         return response.data;
     },
 
-    // 6. Modificar Perfil (PUT)
-    update: async (id, data) => {
-        const payload = {
-            ...data,
-            horasTotalesDeuda: parseInt(data.horasTotalesDeuda),
-            horasAcumuladasActuales: parseInt(data.horasAcumuladasActuales) // <--- Aseguramos que sea número
-        };
-        const response = await api.put(`/Comunitario/modificar-perfil/${id}`, payload);
+   // 6. Modificar Perfil (PUT) AHORA CON MULTIPART
+    update: async (id, formData) => {
+        const response = await api.put(`/Comunitario/modificar-perfil/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 
@@ -91,6 +79,16 @@ export const comunitarioService = {
             // ¡ESTO ES VITAL! Le dice a Axios que no intente leer el Excel como texto,
             // sino que lo mantenga como un archivo binario puro (Blob).
             responseType: 'blob',
+        });
+        return response.data;
+    },
+
+    // 10. Subir Foto de Rostro (FormData)
+    subirFotoRostro: async (formData) => {
+        const response = await api.post('/Comunitario/subir-foto-rostro', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
         });
         return response.data;
     }

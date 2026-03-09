@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { comunitarioService } from '../../services/comunitarioService';
 import { ComunitarioForm } from './ComunitarioForm';
-import { ComunitarioEntradaModal } from './ComunitarioEntradaModal'; 
+import { ComunitarioEntradaModal } from './ComunitarioEntradaModal';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import Form from 'react-bootstrap/Form';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 // AGREGAMOS MdFileDownload AL IMPORT DE ÍCONOS
 import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDock, MdDomainAdd } from "react-icons/md";
 
@@ -34,6 +34,7 @@ export function ComunitarioPage() {
     const [showEvidencia, setShowEvidencia] = useState(false);
     const [showReporte, setShowReporte] = useState(false);
     const [perfilEvidencia, setPerfilEvidencia] = useState(null);
+
 
     useEffect(() => {
         cargarPerfiles();
@@ -63,12 +64,12 @@ export function ComunitarioPage() {
     };
 
     const abrirModalCreacion = () => {
-        setPerfilAEditar(null); 
+        setPerfilAEditar(null);
         setShowModal(true);
     };
 
     const abrirModalEdicion = (perfil) => {
-        setPerfilAEditar(perfil); 
+        setPerfilAEditar(perfil);
         setShowModal(true);
     };
 
@@ -86,7 +87,7 @@ export function ComunitarioPage() {
             timer: 2000,
             showConfirmButton: false
         });
-        cargarPerfiles(); 
+        cargarPerfiles();
     };
 
     const handleSalida = async (perfil) => {
@@ -116,23 +117,37 @@ export function ComunitarioPage() {
         }
     };
 
-    const handleSavePerfil = async (formData) => {
+    const handleSavePerfil = async (datosFormulario, fotoRostro) => {
         try {
-            if (formData.idPerfilComunitario === 0) {
-                await comunitarioService.create(formData);
-                Swal.fire("Creado", "Expediente creado correctamente", "success");
-            } else {
-                const payloadCompleto = {
-                    ...perfilAEditar, 
-                    ...formData       
-                };
-                await comunitarioService.update(formData.idPerfilComunitario, payloadCompleto);
-                Swal.fire("Actualizado", "Datos guardados correctamente", "success");
+            // Empaquetamos todo en un FormData porque ahora enviamos archivos y texto juntos
+            const formData = new FormData();
+            
+            formData.append('IdPerfilComunitario', datosFormulario.idPerfilComunitario);
+            formData.append('Nombre', datosFormulario.nombre);
+            formData.append('ApellidoPaterno', datosFormulario.apellidoPaterno);
+            formData.append('ApellidoMaterno', datosFormulario.apellidoMaterno || '');
+            formData.append('HorasTotalesDeuda', datosFormulario.horasTotalesDeuda);
+            formData.append('HorasAcumuladasActuales', datosFormulario.horasAcumuladasActuales || 0);
+
+            // Si el usuario seleccionó una foto, la adjuntamos
+            if (fotoRostro) {
+                formData.append('FotoRostro', fotoRostro);
             }
+
+            // Enviamos un único request al backend
+            if (datosFormulario.idPerfilComunitario === 0) {
+                await comunitarioService.create(formData);
+                Swal.fire("Creado", "Expediente y foto guardados correctamente", "success");
+            } else {
+                await comunitarioService.update(datosFormulario.idPerfilComunitario, formData);
+                Swal.fire("Actualizado", "Expediente y foto guardados correctamente", "success");
+            }
+
             setShowModal(false);
             cargarPerfiles();
+
         } catch (error) {
-            Swal.fire("Error", error.response?.data || "Ocurrió un error", "error");
+            Swal.fire("Error", error.response?.data || "Ocurrió un error al guardar", "error");
         }
     };
 
@@ -252,7 +267,7 @@ export function ComunitarioPage() {
                                                 onClick={() => abrirModalEvidencia(p)}
                                                 title="Subir evidencia fotográfica"
                                             >
-                                               <MdAdd/> Subir Evidencia
+                                                <MdAdd /> Subir Evidencia
                                             </Button>
                                         </div>
                                     </td>

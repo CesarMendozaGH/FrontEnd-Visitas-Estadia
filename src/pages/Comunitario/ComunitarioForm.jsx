@@ -10,10 +10,16 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
         apellidoPaterno: '',
         apellidoMaterno: '',
         horasTotalesDeuda: '',
-        horasAcumuladasActuales: 0 // <--- Agregamos esto
+        horasAcumuladasActuales: 0
     });
     
+    // NUEVO ESTADO PARA LA FOTO
+    const [fotoRostro, setFotoRostro] = useState(null);
+    
     useEffect(() => {
+        // Limpiamos el input de la foto cada vez que se abre el modal
+        setFotoRostro(null);
+
         if (perfilEditar) {
             setFormData({
                 idPerfilComunitario: perfilEditar.idPerfilComunitario,
@@ -21,7 +27,7 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                 apellidoPaterno: perfilEditar.apellidoPaterno,
                 apellidoMaterno: perfilEditar.apellidoMaterno || '',
                 horasTotalesDeuda: perfilEditar.horasTotalesDeuda,
-                horasAcumuladasActuales: perfilEditar.horasAcumuladasActuales || 0 // <--- Lo cargamos
+                horasAcumuladasActuales: perfilEditar.horasAcumuladasActuales || 0
             });
         } else {
             setFormData({
@@ -30,7 +36,7 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                 apellidoPaterno: '',
                 apellidoMaterno: '',
                 horasTotalesDeuda: '',
-                horasAcumuladasActuales: 0 // <--- En crear, siempre es 0
+                horasAcumuladasActuales: 0
             });
         }
     }, [perfilEditar, show]);
@@ -39,18 +45,23 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const onSubmit = (e) => {
-        e.preventDefault();
-        handleSave(formData);
+    const handleFileChange = (e) => {
+        setFotoRostro(e.target.files[0]);
     };
 
-    //VALIDACION SIMULADA DE SUPERADMIN
+    const onSubmit = (e) => {
+        e.preventDefault();
+        // PASAMOS AMBAS COSAS AL PADRE: Los datos de texto y el archivo
+        handleSave(formData, fotoRostro);
+    };
+
     const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
+
     return (
         <Modal show={show} onHide={handleClose} backdrop="static">
             <Modal.Header closeButton>
                 <Modal.Title>
-                    {perfilEditar ? '✏️ Editar Expediente' : '📄 Alta de Servicio Comunitario'}
+                    {perfilEditar ? ' Editar Expediente' : ' Alta de Servicio Comunitario'}
                 </Modal.Title>
             </Modal.Header>
             <Form onSubmit={onSubmit}>
@@ -84,9 +95,7 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                             />
                         </div>
 
-                        {/* ESTE CAMPO SOLO APARECE AL EDITAR */}
                         {perfilEditar && isSuperAdmin && (
-
                             <div className="col-md-6 mb-3">
                                 <Form.Label className="fw-bold text-warning">Horas Acumuladas</Form.Label>
                                 <Form.Control 
@@ -100,6 +109,22 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                             </div>
                         )}
                     </div>
+
+                    {/* NUEVO CAMPO DE FOTO */}
+                    <Form.Group className="mb-3">
+                        <Form.Label>Foto de Rostro (Opcional)</Form.Label>
+                        <Form.Control 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleFileChange} 
+                        />
+                        {perfilEditar && perfilEditar.urlFotoRostro && (
+                            <Form.Text className="text-muted">
+                                * Este perfil ya tiene una foto. Sube una nueva solo si deseas reemplazarla.
+                            </Form.Text>
+                        )}
+                    </Form.Group>
+
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
