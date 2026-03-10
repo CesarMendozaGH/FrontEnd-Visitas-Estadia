@@ -4,12 +4,12 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Alert from 'react-bootstrap/Alert';
 import { MdTimer, MdWarning } from "react-icons/md";
+import { BACKEND_BASE_URL } from '../../api/apiConfig';
 
 export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar }) => {
-    const [horas, setHoras] = useState(4); // 4 horas por defecto
+    const [horas, setHoras] = useState(4); 
     const [error, setError] = useState(null);
 
-    // Reseteamos el estado cada vez que se abre el modal
     useEffect(() => {
         if (show) {
             setHoras(4);
@@ -27,11 +27,9 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
         }
 
         try {
-            // Intentamos registrar. Si el backend dice "Ya está adentro", caerá en el catch
             await onConfirmar(perfil.idPerfilComunitario, horas);
             handleClose();
         } catch (err) {
-            // Aquí capturamos el mensaje "El usuario ya tiene una sesión activa" del backend
             const mensaje = err.response?.data || "Error al registrar entrada.";
             setError(mensaje);
         }
@@ -47,13 +45,18 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
             
             <Form onSubmit={handleSubmit}>
                 <Modal.Body className="text-center p-4">
-                    {/* Foto o Avatar Placeholder */}
+                    
                     <div className="mb-3 d-flex justify-content-center">
                         <div className="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm border" 
-                             style={{width: '80px', height: '80px', fontSize: '2rem'}}>
+                             style={{width: '100px', height: '100px', fontSize: '2.5rem', overflow: 'hidden'}}>
                             {perfil.urlFotoRostro ? 
-                                <img src={perfil.urlFotoRostro} alt="Foto" className="rounded-circle w-100 h-100 object-fit-cover" /> 
-                                : '👤'}
+                                <img 
+                                    src={`${BACKEND_BASE_URL}${perfil.urlFotoRostro}`} 
+                                    alt="Foto" 
+                                    className="w-100 h-100" 
+                                    style={{ objectFit: 'cover' }}
+                                /> 
+                                : 'Foto'}
                         </div>
                     </div>
 

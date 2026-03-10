@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import { BACKEND_BASE_URL } from '../../api/apiConfig';
+import { MdAdd, MdAddAlert, MdAddBox, MdAddCall, MdAddCard, MdAddCircle, MdAddComment, MdEdit } from 'react-icons/md';
 
 export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar }) => {
     const [formData, setFormData] = useState({
@@ -17,7 +19,6 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
     const [fotoRostro, setFotoRostro] = useState(null);
     
     useEffect(() => {
-        // Limpiamos el input de la foto cada vez que se abre el modal
         setFotoRostro(null);
 
         if (perfilEditar) {
@@ -51,7 +52,6 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
 
     const onSubmit = (e) => {
         e.preventDefault();
-        // PASAMOS AMBAS COSAS AL PADRE: Los datos de texto y el archivo
         handleSave(formData, fotoRostro);
     };
 
@@ -61,7 +61,7 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
         <Modal show={show} onHide={handleClose} backdrop="static">
             <Modal.Header closeButton>
                 <Modal.Title>
-                    {perfilEditar ? ' Editar Expediente' : ' Alta de Servicio Comunitario'}
+                    {perfilEditar ? <><MdEdit/>  Editar Expediente</> : <><MdAdd/> Alta de Servicio Comunitario</>}
                 </Modal.Title>
             </Modal.Header>
             <Form onSubmit={onSubmit}>
@@ -110,9 +110,21 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                         )}
                     </div>
 
-                    {/* NUEVO CAMPO DE FOTO */}
+                    {/* CAMPO DE FOTO CON VISTA PREVIA */}
                     <Form.Group className="mb-3">
                         <Form.Label>Foto de Rostro (Opcional)</Form.Label>
+                        
+                        {perfilEditar && perfilEditar.urlFotoRostro && (
+                            <div className="mb-3 d-flex justify-content-center">
+                                <img 
+                                    src={`${BACKEND_BASE_URL}${perfilEditar.urlFotoRostro}`} 
+                                    alt="Foto actual" 
+                                    className="img-thumbnail rounded-circle shadow-sm"
+                                    style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                                />
+                            </div>
+                        )}
+
                         <Form.Control 
                             type="file" 
                             accept="image/*" 

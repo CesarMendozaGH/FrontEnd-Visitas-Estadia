@@ -63,18 +63,7 @@ export const Sidebar = () => {
           </Link>
         </Nav.Item>
 
-        <Nav.Item>
-          <Link
-            to="/reportes"
-            className={`nav-link d-flex align-items-center gap-2 ${location.pathname.includes('reportes') ? 'active' : 'link-dark'}`}
-          >
-
-            <span class="material-symbols-outlined">
-              docs
-            </span>
-            Reportes
-          </Link>
-        </Nav.Item>
+        
       </Nav>
 
       {/* Footer opcional del sidebar */}

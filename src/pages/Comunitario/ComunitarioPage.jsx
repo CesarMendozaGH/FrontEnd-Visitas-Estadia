@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { comunitarioService } from '../../services/comunitarioService';
 import { ComunitarioForm } from './ComunitarioForm';
-import { ComunitarioEntradaModal } from './ComunitarioEntradaModal';
+import { ComunitarioEntradaModal } from './ComunitarioEntradaModal'; 
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import Form from 'react-bootstrap/Form';
-import Swal from 'sweetalert2';
-// AGREGAMOS MdFileDownload AL IMPORT DE ÍCONOS
-import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDock, MdDomainAdd } from "react-icons/md";
+import Swal from 'sweetalert2'; 
+// AGREGAMOS MdDelete y MdRestore PARA LOS ICONOS DE BORRADO/ACTIVACIÓN
+import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDelete, MdRestore } from "react-icons/md";
 
 // IMPORTS DE REPORTES
 import { ComunitarioEvidenciaModal } from './ComunitarioEvidenciaModal.jsx';
@@ -22,19 +22,20 @@ export function ComunitarioPage() {
     // Estados de Modales
     const [showModal, setShowModal] = useState(false);
     const [showEntradaModal, setShowEntradaModal] = useState(false);
+    const [showEvidencia, setShowEvidencia] = useState(false);
+    const [showReporte, setShowReporte] = useState(false);
 
     // Estados de Selección
     const [perfilSeleccionado, setPerfilSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState('');
-
-    // Estado para saber a quién vamos a editar
     const [perfilAEditar, setPerfilAEditar] = useState(null);
-
-    // Estados para subir los modales de reportes
-    const [showEvidencia, setShowEvidencia] = useState(false);
-    const [showReporte, setShowReporte] = useState(false);
     const [perfilEvidencia, setPerfilEvidencia] = useState(null);
 
+    // NUEVO: Estado para el filtro (Por defecto mostramos ACTIVOS)
+    const [filtroEstatus, setFiltroEstatus] = useState('ACTIVO');
+
+    // VERIFICADOR DE ROL
+    const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
 
     useEffect(() => {
         cargarPerfiles();
@@ -64,12 +65,12 @@ export function ComunitarioPage() {
     };
 
     const abrirModalCreacion = () => {
-        setPerfilAEditar(null);
+        setPerfilAEditar(null); 
         setShowModal(true);
     };
 
     const abrirModalEdicion = (perfil) => {
-        setPerfilAEditar(perfil);
+        setPerfilAEditar(perfil); 
         setShowModal(true);
     };
 
@@ -87,7 +88,7 @@ export function ComunitarioPage() {
             timer: 2000,
             showConfirmButton: false
         });
-        cargarPerfiles();
+        cargarPerfiles(); 
     };
 
     const handleSalida = async (perfil) => {
@@ -117,37 +118,58 @@ export function ComunitarioPage() {
         }
     };
 
-    const handleSavePerfil = async (datosFormulario, fotoRostro) => {
+    // NUEVO: Función para Desactivar/Reactivar (Borrado Lógico)
+    const handleToggleStatus = async (perfil) => {
+        const esActivo = perfil.estatusServicio === 'ACTIVO';
+        const accion = esActivo ? 'desactivar' : 'reactivar';
+        
+        const result = await Swal.fire({
+            title: `¿${esActivo ? 'Desactivar' : 'Reactivar'} expediente?`,
+            text: `El perfil de ${perfil.nombre} pasará a estar ${esActivo ? 'INACTIVO' : 'ACTIVO'}.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: esActivo ? '#d33' : '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `Sí, ${accion}`,
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await comunitarioService.toggleStatus(perfil.idPerfilComunitario);
+                Swal.fire('¡Éxito!', `Expediente modificado correctamente.`, 'success');
+                cargarPerfiles();
+            } catch (error) {
+                Swal.fire('Error', error.response?.data || "Error al cambiar el estatus", 'error');
+            }
+        }
+    };
+
+    const handleSavePerfil = async (formData, fotoRostro) => {
         try {
-            // Empaquetamos todo en un FormData porque ahora enviamos archivos y texto juntos
-            const formData = new FormData();
-            
-            formData.append('IdPerfilComunitario', datosFormulario.idPerfilComunitario);
-            formData.append('Nombre', datosFormulario.nombre);
-            formData.append('ApellidoPaterno', datosFormulario.apellidoPaterno);
-            formData.append('ApellidoMaterno', datosFormulario.apellidoMaterno || '');
-            formData.append('HorasTotalesDeuda', datosFormulario.horasTotalesDeuda);
-            formData.append('HorasAcumuladasActuales', datosFormulario.horasAcumuladasActuales || 0);
+            const dataForm = new FormData();
+            dataForm.append('IdPerfilComunitario', formData.idPerfilComunitario);
+            dataForm.append('Nombre', formData.nombre);
+            dataForm.append('ApellidoPaterno', formData.apellidoPaterno);
+            dataForm.append('ApellidoMaterno', formData.apellidoMaterno || '');
+            dataForm.append('HorasTotalesDeuda', formData.horasTotalesDeuda);
+            dataForm.append('HorasAcumuladasActuales', formData.horasAcumuladasActuales || 0);
 
-            // Si el usuario seleccionó una foto, la adjuntamos
             if (fotoRostro) {
-                formData.append('FotoRostro', fotoRostro);
+                dataForm.append('FotoRostro', fotoRostro);
             }
 
-            // Enviamos un único request al backend
-            if (datosFormulario.idPerfilComunitario === 0) {
-                await comunitarioService.create(formData);
-                Swal.fire("Creado", "Expediente y foto guardados correctamente", "success");
+            if (formData.idPerfilComunitario === 0) {
+                await comunitarioService.create(dataForm);
+                Swal.fire("Creado", "Expediente creado correctamente", "success");
             } else {
-                await comunitarioService.update(datosFormulario.idPerfilComunitario, formData);
-                Swal.fire("Actualizado", "Expediente y foto guardados correctamente", "success");
+                await comunitarioService.update(formData.idPerfilComunitario, dataForm);
+                Swal.fire("Actualizado", "Datos guardados correctamente", "success");
             }
-
             setShowModal(false);
             cargarPerfiles();
-
         } catch (error) {
-            Swal.fire("Error", error.response?.data || "Ocurrió un error al guardar", "error");
+            Swal.fire("Error", error.response?.data || "Ocurrió un error", "error");
         }
     };
 
@@ -161,21 +183,44 @@ export function ComunitarioPage() {
         setShowEvidencia(true);
     };
 
+    // LOGICA DE FILTRADO
+    const perfilesFiltrados = perfiles.filter(p => {
+        // Si NO es SuperAdmin, obligamos a que solo vea los ACTIVOS
+        if (!isSuperAdmin) return p.estatusServicio === 'ACTIVO';
+        
+        // Si ES SuperAdmin, respetamos lo que diga el Select desplegable
+        if (filtroEstatus === 'TODOS') return true;
+        return p.estatusServicio === filtroEstatus;
+    });
+
     return (
         <div>
             {/* Header y Buscador */}
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2>Servicio Comunitario</h2>
 
-                <div className="d-flex gap-2">
+                <div className="d-flex flex-wrap gap-2 align-items-center">
                     <Button variant="primary" onClick={abrirModalCreacion}>
                         <MdPersonAdd /> Nuevo
                     </Button>
 
                     <Button variant="success" onClick={() => setShowReporte(true)} className="d-flex align-items-center gap-2">
                         <MdFileDownload size={20} />
-                        Generar Reporte Excel
+                        Reporte Excel
                     </Button>
+
+                    {/* NUEVO: Filtro desplegable SOLO PARA SUPERADMIN */}
+                    {isSuperAdmin && (
+                        <Form.Select 
+                            value={filtroEstatus} 
+                            onChange={(e) => setFiltroEstatus(e.target.value)}
+                            className="w-auto shadow-sm border-secondary"
+                        >
+                            <option value="ACTIVO">Ver Activos</option>
+                            <option value="INACTIVO">Ver Inactivos</option>
+                            <option value="TODOS">Ver Todos</option>
+                        </Form.Select>
+                    )}
 
                     <Form onSubmit={handleSearch} className="d-flex gap-2">
                         <Form.Control
@@ -201,15 +246,20 @@ export function ComunitarioPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {perfiles.map(p => {
+                        {/* Usamos perfilesFiltrados en lugar de perfiles */}
+                        {perfilesFiltrados.map(p => {
                             const porcentaje = getProgreso(p.horasAcumuladasActuales, p.horasTotalesDeuda);
+                            const esInactivo = p.estatusServicio === 'INACTIVO';
+
                             return (
-                                <tr key={p.idPerfilComunitario}>
+                                <tr key={p.idPerfilComunitario} className={esInactivo ? 'table-secondary text-muted' : ''}>
                                     <td>{p.idPerfilComunitario}</td>
                                     <td className="fw-bold">
                                         {p.nombre} {p.apellidoPaterno} {p.apellidoMaterno}
+                                        {/* ETIQUETA ROJA SI ESTÁ INACTIVO */}
+                                        {esInactivo && <Badge bg="danger" className="ms-2">INACTIVO</Badge>}
                                     </td>
-                                    <td>
+                                    <td style={{ opacity: esInactivo ? 0.6 : 1 }}>
                                         <div className="d-flex align-items-center gap-2">
                                             <ProgressBar
                                                 now={porcentaje}
@@ -219,12 +269,12 @@ export function ComunitarioPage() {
                                             <small>{p.horasAcumuladasActuales} / {p.horasTotalesDeuda}</small>
                                         </div>
                                     </td>
-                                    <td className="text-center">
+                                    <td className="text-center" style={{ opacity: esInactivo ? 0.6 : 1 }}>
                                         {p.horasAcumuladasActuales >= p.horasTotalesDeuda ? (
                                             <Badge bg="success">
                                                 {p.horasAcumuladasActuales > p.horasTotalesDeuda
-                                                    ? `+${p.horasAcumuladasActuales - p.horasTotalesDeuda} h extra realizadas`
-                                                    : "0 h restantes"
+                                                    ? `+${p.horasAcumuladasActuales - p.horasTotalesDeuda} h extra`
+                                                    : "Completado"
                                                 }
                                             </Badge>
                                         ) : (
@@ -243,42 +293,66 @@ export function ComunitarioPage() {
                                             >
                                                 <MdEdit /> Editar
                                             </Button>
-                                            <Button
-                                                variant="outline-success"
-                                                size="sm"
-                                                onClick={() => handleEntradaClick(p)}
-                                                title="Registrar Entrada"
-                                            >
-                                                <MdPlayArrow /> Entrada
-                                            </Button>
-                                            <Button
-                                                variant="outline-danger"
-                                                size="sm"
-                                                onClick={() => handleSalida(p)}
-                                                title="Registrar Salida"
-                                            >
-                                                <MdStop /> Salida
-                                            </Button>
 
-                                            {/* BOTÓN DESCOMENTADO Y ARREGLADO CON 'p' */}
-                                            <Button
-                                                variant="outline-dark"
-                                                size="sm"
-                                                onClick={() => abrirModalEvidencia(p)}
-                                                title="Subir evidencia fotográfica"
-                                            >
-                                                <MdAdd /> Subir Evidencia
-                                            </Button>
+                                            {/* Ocultar botones de entrada/salida/evidencia si está inactivo */}
+                                            {!esInactivo && (
+                                                <>
+                                                    <Button
+                                                        variant="outline-success"
+                                                        size="sm"
+                                                        onClick={() => handleEntradaClick(p)}
+                                                        title="Registrar Entrada"
+                                                    >
+                                                        <MdPlayArrow /> Entrada
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        onClick={() => handleSalida(p)}
+                                                        title="Registrar Salida"
+                                                    >
+                                                        <MdStop /> Salida
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-dark"
+                                                        size="sm"
+                                                        onClick={() => abrirModalEvidencia(p)}
+                                                        title="Subir evidencia"
+                                                    >
+                                                    <MdAdd/> Evidencia
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {/* BOTÓN EXCLUSIVO DE SUPERADMIN PARA BORRADO LÓGICO / ACTIVACIÓN */}
+                                            {isSuperAdmin && (
+                                                <Button
+                                                    variant={esInactivo ? "outline-success" : "outline-danger"}
+                                                    size="sm"
+                                                    onClick={() => handleToggleStatus(p)}
+                                                    title={esInactivo ? "Reactivar Perfil" : "Desactivar Perfil"}
+                                                >
+                                                    {esInactivo ? <MdRestore /> : <MdDelete />}
+                                                    {esInactivo ? ' Reactivar' : ' Borrar'}
+                                                </Button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
                             )
                         })}
+                        {perfilesFiltrados.length === 0 && !loading && (
+                            <tr>
+                                <td colSpan="5" className="text-center text-muted py-4">
+                                    No se encontraron perfiles con el filtro actual.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </Table>
             </div>
 
-            {/* ZONA DE MODALES (AQUÍ DEBEN IR SIEMPRE) */}
+            {/* MODALES */}
             <ComunitarioForm
                 show={showModal}
                 handleClose={() => setShowModal(false)}

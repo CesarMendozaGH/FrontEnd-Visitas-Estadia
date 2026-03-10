@@ -8,7 +8,6 @@ export const EspaciosForm = ({ show, handleClose, handleSave, espacioEditar }) =
     const [formData, setFormData] = useState({
         idEspacios: 0,
         nombre: '',
-        
         capacidad: 0,
         activo: true
     });
@@ -24,14 +23,31 @@ export const EspaciosForm = ({ show, handleClose, handleSave, espacioEditar }) =
     }, [espacioEditar, show]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type } = e.target;
+        
+        // 1. SANITIZACIÓN AL ESCRIBIR: Pasamos a mayúsculas solo si es texto
+        const valorSanitizado = type === 'text' ? value.toUpperCase() : value;
+        
+        setFormData({ ...formData, [name]: valorSanitizado });
     };
 
     const onSubmit = (e) => {
         e.preventDefault();
-        handleSave(formData);
+        
+        // 2. SANITIZACIÓN FINAL: Limpiamos los espacios sobrantes antes de guardar
+        const datosLimpios = {
+            ...formData,
+            nombre: formData.nombre.trim()
+        };
+
+        // Protección extra
+        if (!datosLimpios.nombre) return;
+
+        handleSave(datosLimpios);
     };
+
+    // 3. VALIDACIÓN DEL BOTÓN: Bloqueamos si el nombre está vacío o lleno de puros espacios
+    const isFormValid = formData.nombre.trim().length > 0 && formData.capacidad > 0;
 
     return (
         <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
@@ -48,11 +64,10 @@ export const EspaciosForm = ({ show, handleClose, handleSave, espacioEditar }) =
                             value={formData.nombre}
                             onChange={handleChange}
                             required
-                            placeholder="Ej. Sala de Juntas A"
+                            placeholder="Ej. SALA DE JUNTAS A"
                             autoFocus
                         />
                     </Form.Group>
-
 
                     <Form.Group className="mb-3">
                         <Form.Label>Capacidad (Personas)</Form.Label>
@@ -71,7 +86,7 @@ export const EspaciosForm = ({ show, handleClose, handleSave, espacioEditar }) =
                     <Button variant="secondary" onClick={handleClose}>
                         Cancelar
                     </Button>
-                    <Button variant="primary" type="submit">
+                    <Button variant="primary" type="submit" disabled={!isFormValid}>
                         Guardar Cambios
                     </Button>
                 </Modal.Footer>

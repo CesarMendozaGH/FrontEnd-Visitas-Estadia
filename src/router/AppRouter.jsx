@@ -26,10 +26,7 @@ const router = createBrowserRouter([
         path: "servicio",
         element:<ComunitarioPage />,
       },
-      {
-        path: "reportes",
-        element: <h1>PROXIMAMENTE</h1>,
-      },
+    
       {
         index: true,
         path: "home", // Home

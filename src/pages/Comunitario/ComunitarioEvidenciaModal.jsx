@@ -43,7 +43,7 @@ export const ComunitarioEvidenciaModal = ({ show, handleClose, perfil }) => {
             <Modal.Body>
                 {perfil && (
                     <div className="alert alert-info py-2">
-                        <strong>Infractor:</strong> {perfil.nombre} {perfil.apellidoPaterno}
+                        <strong>Trabajador:</strong> {perfil.nombre} {perfil.apellidoPaterno}
                     </div>
                 )}
                 <Form.Group className="mb-3">

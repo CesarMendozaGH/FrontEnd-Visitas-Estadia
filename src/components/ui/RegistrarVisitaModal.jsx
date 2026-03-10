@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import { MdAdd, MdAddCircleOutline, MdAddReaction, MdAddToQueue } from 'react-icons/md';
 
 export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -13,18 +14,35 @@ export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        
+        // 1. SANITIZACIÓN AL ESCRIBIR: Pasamos a mayúsculas si es texto
+        const valorSanitizado = type === 'checkbox' ? checked : value.toUpperCase();
+
         setFormData({ 
             ...formData, 
-            [name]: type === 'checkbox' ? checked : value 
+            [name]: valorSanitizado 
         });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // 2. SANITIZACIÓN FINAL ANTES DE ENVIAR: Aplicamos trim()
+        const datosLimpios = {
+            ...formData,
+            nombreVisitante: formData.nombreVisitante.trim(),
+            motivoVisita: formData.motivoVisita.trim()
+        };
+
+        // Extra validación de seguridad por si lograron saltarse el botón disabled
+        if (!datosLimpios.nombreVisitante || !datosLimpios.motivoVisita) {
+            return; 
+        }
+
         setLoading(true);
         
         try {
-            await onSuccess(formData);
+            await onSuccess(datosLimpios); // Enviamos los datos limpios al backend
             setFormData({ nombreVisitante: '', motivoVisita: '', aceptoTerminos: false });
             handleClose();
         } catch (error) {
@@ -34,10 +52,16 @@ export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
         }
     };
 
+    // 3. VALIDACIÓN DEL BOTÓN: Usamos trim() para que no acepten "   " como texto válido
+    const isFormValid = 
+        formData.nombreVisitante.trim().length > 0 && 
+        formData.motivoVisita.trim().length > 0 && 
+        formData.aceptoTerminos;
+
     return (
         <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="lg">
             <Modal.Header closeButton>
-                <Modal.Title>📝 Registrar Nueva Visita</Modal.Title>
+                <Modal.Title><><MdAddCircleOutline/> Registrar Nueva Visitas </></Modal.Title>
             </Modal.Header>
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -49,7 +73,7 @@ export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
                             value={formData.nombreVisitante}
                             onChange={handleChange}
                             required
-                            placeholder="Ej. Juan Pérez García"
+                            placeholder="Ej. JUAN PÉREZ GARCÍA"
                             autoFocus
                         />
                     </Form.Group>
@@ -63,7 +87,7 @@ export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
                             value={formData.motivoVisita}
                             onChange={handleChange}
                             required
-                            placeholder="Ej. Reunión con el departamento de RH"
+                            placeholder="Ej. REUNIÓN CON EL DEPARTAMENTO DE RH"
                         />
                     </Form.Group>
 
@@ -93,7 +117,7 @@ export const RegistrarVisitaModal = ({ show, handleClose, onSuccess }) => {
                     <Button 
                         variant="primary" 
                         type="submit" 
-                        disabled={!formData.nombreVisitante || !formData.motivoVisita || !formData.aceptoTerminos || loading}
+                        disabled={!isFormValid || loading} // Usamos nuestra variable validada
                     >
                         {loading ? 'Registrando...' : 'Registrar Entrada'}
                     </Button>
