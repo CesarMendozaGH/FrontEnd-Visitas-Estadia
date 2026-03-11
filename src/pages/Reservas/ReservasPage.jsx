@@ -6,8 +6,9 @@ import { ReservasAsistentesModal } from './ReservasAsistentesModal';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
-import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck } from "react-icons/md";
-import Swal from 'sweetalert2'; // <--- IMPORTANTE
+import Form from 'react-bootstrap/Form';
+import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck, MdFilterList } from "react-icons/md";
+import Swal from 'sweetalert2'; 
 
 export function ReservasPage() {
     const [reservas, setReservas] = useState([]);
@@ -20,12 +21,15 @@ export function ReservasPage() {
     const [showAsistentesModal, setShowAsistentesModal] = useState(false);
     const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
 
+    // NUEVO ESTADO PARA EL FILTRO (Por defecto mostramos todas las "Activas")
+    const [filtroEstatus, setFiltroEstatus] = useState('ACTIVAS'); 
+
     // Forzar re-renderizado cada minuto para actualizar estatus de tiempo
     const [, setTick] = useState(0);
     useEffect(() => {
         const timer = setInterval(() => {
-            setTick(t => t + 1); // Esto solo obliga a React a repintar la pantalla
-        }, 60000); // Cada 60 segundos
+            setTick(t => t + 1); 
+        }, 60000); 
         return () => clearInterval(timer);
     }, []);
 
@@ -41,7 +45,6 @@ export function ReservasPage() {
             setReservas(data);
         } catch (error) {
             console.error("Error al cargar reservas:", error);
-            // No bloqueamos con alert, solo log
         } finally {
             setLoading(false);
         }
@@ -146,48 +149,72 @@ export function ReservasPage() {
         return `${day}/${month}/${year} ${hours}:${minutes}`;
     };
 
-
-
-    // Función para calcular el estado en tiempo real
     const getEstadoReserva = (reserva) => {
-        // 1. Si ya estaba cancelada en BD, se queda cancelada
         if (reserva.estatusReserva === false) {
-            return { texto: "Cancelada", color: "danger", finalizada: true };
+            return { texto: "Cancelada", color: "danger", finalizada: true, rawStatus: "CANCELADA" };
         }
 
         const ahora = new Date();
         const inicio = new Date(reserva.fechaInicio);
         const fin = new Date(reserva.fechaFin);
 
-        // 2. Si la hora actual es mayor al fin -> COMPLETADA
         if (ahora > fin) {
-            return { texto: "Completada", color: "secondary", finalizada: true };
+            return { texto: "Completada", color: "secondary", finalizada: true, rawStatus: "COMPLETADA" };
         }
 
-        // 3. Si estamos dentro del rango -> EN CURSO
         if (ahora >= inicio && ahora <= fin) {
-            return {
-                texto: " En Curso",
-                color: "primary", // Azul o el color que prefieras
-                finalizada: false,
-                animado: true // Para ponerle un efectito visual
-
-            };
+            return { texto: " En Curso", color: "primary", finalizada: false, animado: true, rawStatus: "EN_CURSO" };
         }
 
-        // 4. Si aún no empieza -> PROGRAMADA (Activa)
-        return { texto: "Programada", color: "success", finalizada: false };
+        return { texto: "Programada", color: "success", finalizada: false, rawStatus: "PROGRAMADA" };
     };
 
+    // LOGICA DE FILTRADO
+    const reservasConEstado = reservas.map(res => ({
+        ...res,
+        estadoObj: getEstadoReserva(res)
+    }));
 
+    const reservasFiltradas = reservasConEstado.filter(res => {
+        if (filtroEstatus === 'TODAS') return true;
+        
+        // El filtro "ACTIVAS" muestra las que aún importan (Programadas o En curso)
+        if (filtroEstatus === 'ACTIVAS') {
+            return res.estadoObj.rawStatus === 'PROGRAMADA' || res.estadoObj.rawStatus === 'EN_CURSO';
+        }
+        
+        // Para filtros específicos
+        return res.estadoObj.rawStatus === filtroEstatus;
+    });
 
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2>Gestión de Reservas</h2>
-                <Button className='btn' variant="outline-primary" onClick={handleOpenCreate}>
-                    <MdAdd size={20} /> Nueva Reserva
-                </Button>
+                
+                <div className="d-flex flex-wrap gap-2 align-items-center">
+                    {/* NUEVO: SELECTOR DE FILTROS */}
+                    <div className="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm border">
+                        <MdFilterList size={20} className="text-muted" />
+                        <Form.Select 
+                            value={filtroEstatus} 
+                            onChange={(e) => setFiltroEstatus(e.target.value)}
+                            className="border-0 shadow-none fw-semibold"
+                            style={{ cursor: 'pointer', minWidth: '160px' }}
+                        >
+                            <option value="ACTIVAS">Solo Activas</option>
+                            <option value="PROGRAMADA">Próximas (Programadas)</option>
+                            <option value="EN_CURSO">En Curso Ahora</option>
+                            <option value="COMPLETADA">Historial (Completadas)</option>
+                            <option value="CANCELADA">Canceladas</option>
+                            <option value="TODAS">Ver Todas</option>
+                        </Form.Select>
+                    </div>
+
+                    <Button variant="primary" onClick={handleOpenCreate} className="d-flex align-items-center gap-1">
+                        <MdAdd size={20} /> Nueva Reserva
+                    </Button>
+                </div>
             </div>
 
             <div className="table-responsive shadow-sm rounded bg-white">
@@ -208,18 +235,16 @@ export function ReservasPage() {
                     <tbody>
                         {loading ? (
                             <tr><td colSpan="9" className="text-center py-4">Cargando...</td></tr>
-                        ) : reservas.length === 0 ? (
-                            <tr><td colSpan="9" className="text-center py-4">No hay reservas registradas.</td></tr>
+                        ) : reservasFiltradas.length === 0 ? (
+                            <tr><td colSpan="9" className="text-center py-4 text-muted">No se encontraron reservas para el filtro seleccionado.</td></tr>
                         ) : (
-                            reservas.map((item) => {
-                                // Calculamos el estado de esta fila
-                                const estado = getEstadoReserva(item);
+                            reservasFiltradas.map((item) => {
+                                const estado = item.estadoObj;
 
                                 return (
                                     <tr
                                         key={item.idReserva}
                                         style={{
-                                            // Bajamos la opacidad si está cancelada o completada
                                             opacity: estado.finalizada ? 0.6 : 1,
                                             backgroundColor: estado.texto === "Cancelada" ? '#fff5f5' : 'transparent'
                                         }}
@@ -236,18 +261,16 @@ export function ReservasPage() {
                                             </Badge>
                                         </td>
 
-                                        {/* COLUMNA DE ESTATUS DINÁMICO */}
                                         <td className="text-center">
                                             <Badge
                                                 bg={estado.color}
-                                                // Usamos d-inline-flex para que no se estire a lo ancho de toda la celda
                                                 className={estado.animado ? "d-inline-flex align-items-center gap-1 faa-pulse animated" : ""}
-                                                style={{ verticalAlign: 'middle' }} // Asegura centrado perfecto con la línea
+                                                style={{ verticalAlign: 'middle' }} 
                                             >
                                                 {estado.animado && (
                                                     <span
                                                         className="spinner-grow spinner-grow-sm"
-                                                        style={{ width: '6px', height: '6px' }} // Ajusté un poco el tamaño para que sea más sutil
+                                                        style={{ width: '6px', height: '6px' }} 
                                                         role="status"
                                                         aria-hidden="true"
                                                     ></span>
@@ -256,15 +279,12 @@ export function ReservasPage() {
                                             </Badge>
                                         </td>
 
-                                        {/* ACCIONES (BLOQUEADAS SI YA TERMINÓ) */}
                                         <td className="text-center">
-                                            {/* Solo permitimos editar/agregar si NO ha finalizado */}
                                             {!estado.finalizada && (
-                                                <>
+                                                <div className="btn-group">
                                                     <Button
                                                         variant="outline-primary"
                                                         size="sm"
-                                                        className="me-2"
                                                         onClick={() => handleOpenEdit(item)}
                                                         title="Editar"
                                                     >
@@ -273,7 +293,6 @@ export function ReservasPage() {
                                                     <Button
                                                         variant="outline-secondary"
                                                         size="sm"
-                                                        className="me-2"
                                                         onClick={() => handleOpenAsistentes(item)}
                                                         title="Gestionar Asistentes"
                                                     >
@@ -287,10 +306,9 @@ export function ReservasPage() {
                                                     >
                                                         <MdDelete />
                                                     </Button>
-                                                </>
+                                                </div>
                                             )}
 
-                                            {/* Si ya acabó, mostramos un ícono o texto discreto */}
                                             {estado.texto === "Completada" && (
                                                 <span className="text-muted small"><MdCheck /> Finalizada</span>
                                             )}

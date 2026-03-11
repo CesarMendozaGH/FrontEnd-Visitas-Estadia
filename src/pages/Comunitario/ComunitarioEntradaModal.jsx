@@ -77,7 +77,7 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
                     <Form.Group className="text-start bg-light p-3 rounded border">
                         <Form.Label className="fw-semibold d-flex align-items-center gap-2">
                             <MdTimer className="text-success"/> 
-                            Horas a cubrir hoy:
+                            Horas a cubrir hoy: 
                         </Form.Label>
                         <div className="d-flex gap-2">
                             <Button variant="outline-secondary" onClick={() => setHoras(Math.max(1, horas - 1))}>-</Button>
