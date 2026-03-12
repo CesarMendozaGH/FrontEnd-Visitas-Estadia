@@ -68,7 +68,7 @@ export const ComunitarioForm = ({ show, handleClose, handleSave, perfilEditar })
                 <Modal.Body>
                     <div className="row">
                         <div className="col-md-6 mb-3">
-                            <Form.Label>Nombre</Form.Label>
+                            <Form.Label>Nombre(s)</Form.Label>
                             <Form.Control name="nombre" value={formData.nombre} onChange={handleChange} required autoFocus />
                         </div>
                         <div className="col-md-6 mb-3">

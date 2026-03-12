@@ -112,5 +112,11 @@ export const reservasService = {
     checkinMasivo: async (idsAsistentes) => {
         const response = await api.put('/Reservas/Asistentes/checkin-masivo', idsAsistentes);
         return response.data;
+    },
+
+    // 10 NUEVO: Eliminar asistente
+    eliminarAsistente: async (idAsistente) => {
+        const response = await api.delete(`/Reservas/Asistentes/${idAsistente}`);
+        return response.data;
     }
 };

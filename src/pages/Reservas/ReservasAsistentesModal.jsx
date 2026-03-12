@@ -75,7 +75,7 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
             await reservasService.agregarAsistentes(reserva.idReserva, asistentesTemp);
             setAsistentesTemp([]);
             cargarAsistentes();
-            
+
             Swal.fire({
                 title: "¡Guardado!",
                 text: "Asistentes registrados correctamente.",
@@ -152,6 +152,39 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
             });
         }
     };
+
+    const handleDeleteAsistente = async (idListaAsistente, nombreAsistente) => {
+        const result = await Swal.fire({
+            title: '¿Eliminar asistente?',
+            text: `Se borrará a "${nombreAsistente}" de la lista oficial.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Llamamos al servicio que creamos en reservasService.js
+                await reservasService.eliminarAsistente(idListaAsistente);
+
+                // Refrescamos la tabla
+                cargarAsistentes();
+
+                Swal.fire('Eliminado', 'El visitante fue retirado de la reserva.', 'success');
+            } catch (error) {
+                console.error("Error al eliminar:", error);
+                const msgError = error.response?.data || 'No se pudo eliminar al asistente.';
+                Swal.fire('Error', msgError, 'error');
+            }
+        }
+    };
+
+    const isFinalizada = reserva && new Date() > new Date(reserva.fechaFin);
+    const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
+    const readOnly = isFinalizada && !isSuperAdmin;
 
     return (
         <Modal show={show} onHide={handleClose} size="xl" backdrop="static">
@@ -262,6 +295,15 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
                                                 title={asistente.asistio ? "Marcar como no asistió" : "Marcar asistencia"}
                                             >
                                                 {asistente.asistio ? 'Desmarcar' : 'Check-In'}
+                                            </Button>
+
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleDeleteAsistente(asistente.idLista, `${asistente.nombre} ${asistente.apellidoPaterno}`)}
+                                                title="Eliminar de la lista"
+                                            >
+                                                Eliminar
                                             </Button>
                                         </td>
                                     </tr>

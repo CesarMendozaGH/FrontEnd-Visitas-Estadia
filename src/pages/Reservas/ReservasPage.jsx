@@ -8,7 +8,7 @@ import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import Form from 'react-bootstrap/Form';
 import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck, MdFilterList } from "react-icons/md";
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 
 export function ReservasPage() {
     const [reservas, setReservas] = useState([]);
@@ -22,14 +22,14 @@ export function ReservasPage() {
     const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
 
     // NUEVO ESTADO PARA EL FILTRO (Por defecto mostramos todas las "Activas")
-    const [filtroEstatus, setFiltroEstatus] = useState('ACTIVAS'); 
+    const [filtroEstatus, setFiltroEstatus] = useState('ACTIVAS');
 
     // Forzar re-renderizado cada minuto para actualizar estatus de tiempo
     const [, setTick] = useState(0);
     useEffect(() => {
         const timer = setInterval(() => {
-            setTick(t => t + 1); 
-        }, 60000); 
+            setTick(t => t + 1);
+        }, 60000);
         return () => clearInterval(timer);
     }, []);
 
@@ -177,27 +177,29 @@ export function ReservasPage() {
 
     const reservasFiltradas = reservasConEstado.filter(res => {
         if (filtroEstatus === 'TODAS') return true;
-        
+
         // El filtro "ACTIVAS" muestra las que aún importan (Programadas o En curso)
         if (filtroEstatus === 'ACTIVAS') {
             return res.estadoObj.rawStatus === 'PROGRAMADA' || res.estadoObj.rawStatus === 'EN_CURSO';
         }
-        
+
         // Para filtros específicos
         return res.estadoObj.rawStatus === filtroEstatus;
     });
+
+    const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
 
     return (
         <div>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2>Gestión de Reservas</h2>
-                
+
                 <div className="d-flex flex-wrap gap-2 align-items-center">
                     {/* NUEVO: SELECTOR DE FILTROS */}
                     <div className="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm border">
                         <MdFilterList size={20} className="text-muted" />
-                        <Form.Select 
-                            value={filtroEstatus} 
+                        <Form.Select
+                            value={filtroEstatus}
                             onChange={(e) => setFiltroEstatus(e.target.value)}
                             className="border-0 shadow-none fw-semibold"
                             style={{ cursor: 'pointer', minWidth: '160px' }}
@@ -265,12 +267,12 @@ export function ReservasPage() {
                                             <Badge
                                                 bg={estado.color}
                                                 className={estado.animado ? "d-inline-flex align-items-center gap-1 faa-pulse animated" : ""}
-                                                style={{ verticalAlign: 'middle' }} 
+                                                style={{ verticalAlign: 'middle' }}
                                             >
                                                 {estado.animado && (
                                                     <span
                                                         className="spinner-grow spinner-grow-sm"
-                                                        style={{ width: '6px', height: '6px' }} 
+                                                        style={{ width: '6px', height: '6px' }}
                                                         role="status"
                                                         aria-hidden="true"
                                                     ></span>
@@ -280,37 +282,48 @@ export function ReservasPage() {
                                         </td>
 
                                         <td className="text-center">
-                                            {!estado.finalizada && (
-                                                <div className="btn-group">
+                                            <div className="btn-group d-flex justify-content-center align-items-center">
+
+                                                {/* 1. BOTÓN DE ASISTENTES: SIEMPRE VISIBLE */}
+                                                <Button
+                                                    variant="outline-secondary"
+                                                    size="sm"
+                                                    onClick={() => handleOpenAsistentes(item)}
+                                                    title={estado.finalizada ? "Ver Lista de Asistentes" : "Gestionar Asistentes"}
+                                                >
+                                                    <MdPersonAdd />
+                                                </Button>
+
+                                                {/* 2. BOTÓN DE EDITAR: Visible si NO ha finalizado, o si es SUPERADMIN */}
+                                                {(!estado.finalizada || isSuperAdmin) && (
                                                     <Button
                                                         variant="outline-primary"
                                                         size="sm"
+                                                        className="ms-1"
                                                         onClick={() => handleOpenEdit(item)}
                                                         title="Editar"
                                                     >
                                                         <MdEdit />
                                                     </Button>
-                                                    <Button
-                                                        variant="outline-secondary"
-                                                        size="sm"
-                                                        onClick={() => handleOpenAsistentes(item)}
-                                                        title="Gestionar Asistentes"
-                                                    >
-                                                        <MdPersonAdd />
-                                                    </Button>
+                                                )}
+
+                                                {/* 3. BOTÓN DE CANCELAR: Solo visible si NO ha finalizado */}
+                                                {!estado.finalizada && (
                                                     <Button
                                                         variant="outline-danger"
                                                         size="sm"
+                                                        className="ms-1"
                                                         onClick={() => handleCancelarReserva(item.idReserva)}
                                                         title="Cancelar Reserva"
                                                     >
                                                         <MdDelete />
                                                     </Button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
 
-                                            {estado.texto === "Completada" && (
-                                                <span className="text-muted small"><MdCheck /> Finalizada</span>
+                                            {/* Etiqueta de "Finalizada" solo para usuarios normales (el admin ya ve sus botones) */}
+                                            {estado.texto === "Completada" && !isSuperAdmin && (
+                                                <div className="text-muted small mt-1"><MdCheck /> Finalizada</div>
                                             )}
                                         </td>
                                     </tr>
