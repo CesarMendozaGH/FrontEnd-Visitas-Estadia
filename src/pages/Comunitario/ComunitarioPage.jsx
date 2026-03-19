@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { comunitarioService } from '../../services/comunitarioService';
 import { ComunitarioForm } from './ComunitarioForm';
-import { ComunitarioEntradaModal } from './ComunitarioEntradaModal'; 
+import { ComunitarioEntradaModal } from './ComunitarioEntradaModal';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import Form from 'react-bootstrap/Form';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 // AGREGAMOS MdDelete y MdRestore PARA LOS ICONOS DE BORRADO/ACTIVACIÓN
-import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDelete, MdRestore } from "react-icons/md";
+import { MdPersonAdd, MdPlayArrow, MdStop, MdSearch, MdEdit, MdFileDownload, MdAdd, MdDelete, MdRestore, MdAddPhotoAlternate } from "react-icons/md";
 
 // IMPORTS DE REPORTES
 import { ComunitarioEvidenciaModal } from './ComunitarioEvidenciaModal.jsx';
@@ -35,7 +35,9 @@ export function ComunitarioPage() {
     const [filtroEstatus, setFiltroEstatus] = useState('ACTIVO');
 
     // VERIFICADOR DE ROL
-    const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
+    //const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
+    const rolActual = localStorage.getItem('rol_dev');
+    const tieneControlComunitario = ['SUPERADMIN', 'COMUNITARIO'].includes(rolActual);
 
     useEffect(() => {
         cargarPerfiles();
@@ -65,12 +67,12 @@ export function ComunitarioPage() {
     };
 
     const abrirModalCreacion = () => {
-        setPerfilAEditar(null); 
+        setPerfilAEditar(null);
         setShowModal(true);
     };
 
     const abrirModalEdicion = (perfil) => {
-        setPerfilAEditar(perfil); 
+        setPerfilAEditar(perfil);
         setShowModal(true);
     };
 
@@ -88,7 +90,7 @@ export function ComunitarioPage() {
             timer: 2000,
             showConfirmButton: false
         });
-        cargarPerfiles(); 
+        cargarPerfiles();
     };
 
     const handleSalida = async (perfil) => {
@@ -122,7 +124,7 @@ export function ComunitarioPage() {
     const handleToggleStatus = async (perfil) => {
         const esActivo = perfil.estatusServicio === 'ACTIVO';
         const accion = esActivo ? 'desactivar' : 'reactivar';
-        
+
         const result = await Swal.fire({
             title: `¿${esActivo ? 'Desactivar' : 'Reactivar'} expediente?`,
             text: `El perfil de ${perfil.nombre} pasará a estar ${esActivo ? 'INACTIVO' : 'ACTIVO'}.`,
@@ -186,8 +188,8 @@ export function ComunitarioPage() {
     // LOGICA DE FILTRADO
     const perfilesFiltrados = perfiles.filter(p => {
         // Si NO es SuperAdmin, obligamos a que solo vea los ACTIVOS
-        if (!isSuperAdmin) return p.estatusServicio === 'ACTIVO';
-        
+        if (!tieneControlComunitario) return p.estatusServicio === 'ACTIVO';
+
         // Si ES SuperAdmin, respetamos lo que diga el Select desplegable
         if (filtroEstatus === 'TODOS') return true;
         return p.estatusServicio === filtroEstatus;
@@ -200,9 +202,11 @@ export function ComunitarioPage() {
                 <h2>Servicio Comunitario</h2>
 
                 <div className="d-flex flex-wrap gap-2 align-items-center">
-                    <Button variant="primary" onClick={abrirModalCreacion}>
-                        <MdPersonAdd /> Nuevo
-                    </Button>
+                    {tieneControlComunitario && (
+                        <Button variant="primary" onClick={abrirModalCreacion}>
+                            <MdPersonAdd /> Nuevo
+                        </Button>
+                    )}
 
                     <Button variant="success" onClick={() => setShowReporte(true)} className="d-flex align-items-center gap-2">
                         <MdFileDownload size={20} />
@@ -210,9 +214,9 @@ export function ComunitarioPage() {
                     </Button>
 
                     {/* NUEVO: Filtro desplegable SOLO PARA SUPERADMIN */}
-                    {isSuperAdmin && (
-                        <Form.Select 
-                            value={filtroEstatus} 
+                    {tieneControlComunitario && (
+                        <Form.Select
+                            value={filtroEstatus}
                             onChange={(e) => setFiltroEstatus(e.target.value)}
                             className="w-auto shadow-sm border-secondary"
                         >
@@ -283,7 +287,7 @@ export function ComunitarioPage() {
                                             </Badge>
                                         )}
                                     </td>
-                                    <td className="text-center">
+                                    {/* <td className="text-center">
                                         <div className="btn-group">
                                             <Button
                                                 variant="outline-primary"
@@ -292,10 +296,10 @@ export function ComunitarioPage() {
                                                 title="Editar Expediente"
                                             >
                                                 <MdEdit /> Editar
-                                            </Button>
+                                            </Button> */}
 
-                                            {/* Ocultar botones de entrada/salida/evidencia si está inactivo */}
-                                            {!esInactivo && (
+                                    {/* Ocultar botones de entrada/salida/evidencia si está inactivo */}
+                                    {/* {!esInactivo && (
                                                 <>
                                                     <Button
                                                         variant="outline-success"
@@ -319,13 +323,13 @@ export function ComunitarioPage() {
                                                         onClick={() => abrirModalEvidencia(p)}
                                                         title="Subir evidencia"
                                                     >
-                                                    <MdAdd/> Evidencia
+                                                        <MdAdd /> Evidencia
                                                     </Button>
                                                 </>
-                                            )}
+                                            )} */}
 
-                                            {/* BOTÓN EXCLUSIVO DE SUPERADMIN PARA BORRADO LÓGICO / ACTIVACIÓN */}
-                                            {isSuperAdmin && (
+                                    {/* BOTÓN EXCLUSIVO DE SUPERADMIN PARA BORRADO LÓGICO / ACTIVACIÓN */}
+                                    {/* {tieneControlComunitario && (
                                                 <Button
                                                     variant={esInactivo ? "outline-success" : "outline-danger"}
                                                     size="sm"
@@ -334,6 +338,69 @@ export function ComunitarioPage() {
                                                 >
                                                     {esInactivo ? <MdRestore /> : <MdDelete />}
                                                     {esInactivo ? ' Reactivar' : ' Borrar'}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>  */}
+
+                                    <td className="text-center align-middle">
+                                        {/* Usamos d-flex y gap-1 para que tengan una separación bonita y no estén pegados */}
+                                        <div className="d-flex justify-content-center align-items-center gap-1">
+
+                                            {tieneControlComunitario ? (
+                                                <Button
+                                                    variant="outline-primary"
+                                                    size="md"
+                                                    onClick={() => abrirModalEdicion(p)}
+                                                    title="Editar Expediente"
+                                                >
+                                                    <MdEdit size={18} /> {/* Quitamos la palabra "Editar" y hacemos el ícono un pelín más grande */}
+                                                </Button>
+                                            ) : (
+                                                <Badge bg="secondary" className="me-1">Solo Lectura</Badge>
+                                            )}
+
+                                            {/* Ocultar botones de entrada/salida/evidencia si está inactivo */}
+                                            {!esInactivo && (
+                                                <>
+                                                    <Button
+                                                        variant="outline-success"
+                                                        size="md"
+                                                        onClick={() => handleEntradaClick(p)}
+                                                        title="Registrar Entrada"
+                                                    >
+                                                        <MdPlayArrow size={18} />
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="md"
+                                                        onClick={() => handleSalida(p)}
+                                                        title="Registrar Salida"
+                                                    >
+                                                        <MdStop size={18} />
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="outline-dark"
+                                                        size="md"
+                                                        onClick={() => abrirModalEvidencia(p)}
+                                                        title="Subir Evidencia"
+                                                    >
+                                                        <MdAddPhotoAlternate size={18} />
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {/* BOTÓN EXCLUSIVO DE SUPERADMIN PARA BORRADO LÓGICO / ACTIVACIÓN */}
+                                            {tieneControlComunitario && (
+                                                <Button
+                                                    variant={esInactivo ? "outline-success" : "outline-danger"}
+                                                    size="md"
+                                                    onClick={() => handleToggleStatus(p)}
+                                                    title={esInactivo ? "Reactivar Perfil" : "Desactivar Perfil"}
+                                                >
+                                                    {esInactivo ? <MdRestore size={18} /> : <MdDelete size={18} />}
                                                 </Button>
                                             )}
                                         </div>

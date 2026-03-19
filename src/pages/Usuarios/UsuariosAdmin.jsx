@@ -10,12 +10,12 @@ export const UsuariosAdmin = () => {
 
     // Los roles exactos que definiste
     const rolesDisponibles = [
-        'USUARIO_NORMAL',
-        'RECEPCION',
-        'COMUNITARIO',
-        'DIRECTIVO',
-        'TOTAL',
-        'SUPERADMIN'
+        'USUARIO_NORMAL', // PRUEBA DE DESARROLLO TODO ESTA LIMITADO
+        'RECEPCION',    // PERSONAS EXTERNAS QUE SE TIENEN QUE REGISTRAR AL ENTRAR
+        'COMUNITARIO',  // PERSONA QUE DIRIGE EL SERVICIO COMUNITARIO
+        'DIRECTIVO', // PERSONAS ENCARGADAS DE AREAS 
+        'TOTAL', //VER TODO PERO CON RESTRICCIONES
+        'SUPERADMIN' //VER TODO Y SALTAR LIMITACIONES
     ];
 
     const cargarUsuarios = async () => {
@@ -46,11 +46,11 @@ export const UsuariosAdmin = () => {
 
         try {
             await api.put(`/Usuarios/${idUsuario}/Rol`, { nuevoRol: nuevoRol });
-            
+
             // Actualizamos la tabla visualmente sin tener que recargar toda la página
             setUsuarios(usuarios.map(u => u.idUsuario === idUsuario ? { ...u, rol: nuevoRol } : u));
             alert(`✅ El rol de ${nombreUsuario} se actualizó a ${nuevoRol}`);
-            
+
         } catch (err) {
             console.error("Error al actualizar:", err);
             alert(err.response?.data || "Ocurrió un error al intentar cambiar el rol.");
@@ -67,7 +67,7 @@ export const UsuariosAdmin = () => {
             <h2 className="mb-4 fw-bold d-flex align-items-center gap-2" style={{ color: '#f96f31' }}>
                 <FaUserShield /> Administración de Usuarios
             </h2>
-            
+
             <Table responsive hover className="align-middle">
                 <thead className="table-light">
                     <tr>
@@ -90,11 +90,11 @@ export const UsuariosAdmin = () => {
                                 </Badge>
                             </td>
                             <td style={{ width: '250px' }}>
-                                <Form.Select 
+                                <Form.Select
                                     value={usuario.rol}
                                     onChange={(e) => handleCambiarRol(usuario.idUsuario, usuario.nombreCompleto, e.target.value)}
                                     // Bloqueamos el dropdown si es el creador del sistema
-                                    disabled={usuario.rol === 'SUPERADMIN' && usuario.idUsuario === 1} 
+                                    disabled={usuario.rol === 'SUPERADMIN' && usuario.idUsuario === 1}
                                     size="sm"
                                     className="fw-bold"
                                 >

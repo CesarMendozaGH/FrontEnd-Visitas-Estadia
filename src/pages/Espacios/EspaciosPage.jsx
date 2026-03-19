@@ -10,9 +10,12 @@ import Swal from 'sweetalert2'; // <--- IMPORTANTE
 export function EspaciosPage() {
     const [espacios, setEspacios] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     const [showModal, setShowModal] = useState(false);
     const [editingEspacio, setEditingEspacio] = useState(null);
+
+    const rolActual = localStorage.getItem('rol_dev');
+    const esSuperAdmin = rolActual === 'SUPERADMIN';
 
     useEffect(() => {
         cargarEspacios();
@@ -22,7 +25,7 @@ export function EspaciosPage() {
         setLoading(true);
         try {
             const data = await espaciosService.getAll();
-            const activos = data.filter(e => e.activo !== false); 
+            const activos = data.filter(e => e.activo !== false);
             setEspacios(activos);
         } catch (error) {
             console.error("Error al cargar:", error);
@@ -124,23 +127,25 @@ export function EspaciosPage() {
                                         </Badge>
                                     </td>
                                     <td className="text-center">
-                                        <Button 
-                                            variant="outline-primary" 
-                                            size="sm" 
+                                        <Button
+                                            variant="outline-primary"
+                                            size="sm"
                                             className="me-2"
                                             onClick={() => handleOpenEdit(item)}
                                             title="Editar"
                                         >
                                             <MdEdit />
                                         </Button>
-                                        <Button 
-                                            variant="outline-danger" 
+                                        {esSuperAdmin && (
+                                        <Button
+                                            variant="outline-danger"
                                             size="sm"
                                             onClick={() => handleDelete(item.idEspacios)}
                                             title="Eliminar"
                                         >
                                             <MdDelete />
                                         </Button>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -149,9 +154,9 @@ export function EspaciosPage() {
                 </Table>
             </div>
 
-            <EspaciosForm 
-                show={showModal} 
-                handleClose={handleCloseModal} 
+            <EspaciosForm
+                show={showModal}
+                handleClose={handleCloseModal}
                 handleSave={handleSave}
                 espacioEditar={editingEspacio}
             />

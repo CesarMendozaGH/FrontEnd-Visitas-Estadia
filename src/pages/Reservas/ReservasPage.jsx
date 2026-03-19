@@ -24,6 +24,9 @@ export function ReservasPage() {
     // NUEVO ESTADO PARA EL FILTRO (Por defecto mostramos todas las "Activas")
     const [filtroEstatus, setFiltroEstatus] = useState('ACTIVAS');
 
+    //MANEJO DE ROLES   
+    const rolActual = localStorage.getItem('rol_dev');
+    const esSuperAdmin = rolActual === 'SUPERADMIN';
     // Forzar re-renderizado cada minuto para actualizar estatus de tiempo
     const [, setTick] = useState(0);
     useEffect(() => {
@@ -308,7 +311,7 @@ export function ReservasPage() {
                                                 )}
 
                                                 {/* 3. BOTÓN DE CANCELAR: Solo visible si NO ha finalizado */}
-                                                {!estado.finalizada && (
+                                                {(!estado.finalizada && esSuperAdmin) && (
                                                     <Button
                                                         variant="outline-danger"
                                                         size="sm"

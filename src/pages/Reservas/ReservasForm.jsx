@@ -70,12 +70,12 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
         setFormData(prev => ({ ...prev, [name]: valorSanitizado }));
     };
 
-    // LÓGICA DE 14 DÍAS DE ANTICIPACIÓN
+    // LÓGICA DE 15 DÍAS DE ANTICIPACIÓN
     const getMinStartDate = () => {
         if (isSuperAdmin) return null; // Sin límite
 
         const hoy = new Date();
-        hoy.setDate(hoy.getDate() + 14);
+        hoy.setDate(hoy.getDate() + 15);
         const minDateStr = hoy.toISOString().split('T')[0];
 
         if (reservaEditar && formData.fechaReserva && formData.fechaReserva < minDateStr) {
@@ -183,11 +183,12 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
                                     disableMobile: "true" // Fuerza el diseño bonito en móviles
                                 }}
                                 className="form-control bg-white" // Fondo blanco para que no parezca deshabilitado
-                                placeholder="📅 Selecciona el día..."
+                                
+                                placeholder="Selecciona el día..."
                                 required
                             />
                             {!isSuperAdmin && !reservaEditar && (
-                                <Form.Text className="text-danger" style={{fontSize: '0.75rem'}}>* Requiere 14 días de anticipación.</Form.Text>
+                                <Form.Text className="text-danger" style={{fontSize: '0.75rem'}}>* Requiere 15 días de anticipación.</Form.Text>
                             )}
                         </Form.Group>
 

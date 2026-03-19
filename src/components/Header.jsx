@@ -14,7 +14,7 @@ export const Header = () => {
   const toggleDevRole = () => {
     const currentRole = localStorage.getItem('rol_dev');
     if (currentRole === 'SUPERADMIN') {
-      localStorage.setItem('rol_dev', 'USER');
+      localStorage.setItem('rol_dev', 'DIRECTIVO');
     } else {
       localStorage.setItem('rol_dev', 'SUPERADMIN');
     }
