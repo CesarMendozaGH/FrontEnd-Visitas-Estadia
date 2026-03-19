@@ -63,7 +63,18 @@ export const Sidebar = () => {
           </Link>
         </Nav.Item>
 
-        
+        <Nav.Item>
+          <Link
+            to="/usuario"
+            className={`nav-link d-flex align-items-center gap-2 ${location.pathname.includes('usuario') ? 'active' : 'link-dark'}`}
+          >
+            <span class="material-symbols-outlined">
+              person_shield
+            </span>
+            Usuarios Y roles
+          </Link>
+        </Nav.Item>
+
       </Nav>
 
       {/* Footer opcional del sidebar */}

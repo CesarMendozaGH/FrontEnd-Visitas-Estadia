@@ -4,6 +4,7 @@ import { EspaciosPage } from '../pages/Espacios/EspaciosPage';
 import { BitacoraPage } from '../pages/Bitacora/BitacoraPage';
 import { ReservasPage } from '../pages/Reservas/ReservasPage';
 import { ComunitarioPage } from '../pages/Comunitario/ComunitarioPage';
+import { UsuariosAdmin } from '../pages/Usuarios/UsuariosAdmin';
 
 const router = createBrowserRouter([
   {
@@ -26,7 +27,11 @@ const router = createBrowserRouter([
         path: "servicio",
         element:<ComunitarioPage />,
       },
-    
+      {
+        path: "usuario",
+        element:<UsuariosAdmin/>
+      },
+
       {
         index: true,
         path: "home", // Home

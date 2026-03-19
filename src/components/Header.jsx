@@ -7,6 +7,8 @@ import { Button } from 'react-bootstrap';
 import logo_BAL from '../assets/logo_BAL.png'
 import logo_BAL2 from '../assets/logo_BAL_2.png'
 import logo_BAL3 from '../assets/logo_BAL_3.png'
+import { authService } from '../services/authService';
+
 
 export const Header = () => {
   const toggleDevRole = () => {
@@ -17,6 +19,18 @@ export const Header = () => {
       localStorage.setItem('rol_dev', 'SUPERADMIN');
     }
     window.location.reload(); // Recargamos para aplicar el cambio visual
+  };
+
+  //LOGIN SIMULADO
+ const handleDevLogin = async () => {
+    try {
+      const usuario = await authService.simularLoginIntranet();
+      alert(`¡Magia! Entraste como ${usuario.nombre} con rol de ${usuario.rol}`);
+      window.location.reload(); 
+    } catch (error) {
+      console.error("El error real es:", error); // <-- ¡Agrega esta línea!
+      alert("Falló la simulación. Revisa la consola.");
+    }
   };
 
   const currentRole = localStorage.getItem('rol_dev') || 'USER';
@@ -47,6 +61,10 @@ export const Header = () => {
             >
               {currentRole}
             </Button>
+
+            <button className="btn btn-warning fw-bold mb-3" onClick={handleDevLogin}>
+              🧪 SIMULAR INTRANET (MISAEL)
+            </button>
           </div>
         </Nav>
       </Container>

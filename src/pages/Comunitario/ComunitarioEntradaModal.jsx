@@ -74,27 +74,61 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
                         </Alert>
                     )}
 
-                    <Form.Group className="text-start bg-light p-3 rounded border">
-                        <Form.Label className="fw-semibold d-flex align-items-center gap-2">
-                            <MdTimer className="text-success"/> 
-                            Horas a cubrir hoy: 
-                        </Form.Label>
-                        <div className="d-flex gap-2">
-                            <Button variant="outline-secondary" onClick={() => setHoras(Math.max(1, horas - 1))}>-</Button>
-                            <Form.Control 
-                                type="number" 
-                                value={horas} 
-                                onChange={(e) => setHoras(parseInt(e.target.value) || 0)}
-                                className="text-center fw-bold fs-5"
-                                min="1"
-                                autoFocus
-                            />
-                            <Button variant="outline-secondary" onClick={() => setHoras(horas + 1)}>+</Button>
-                        </div>
-                        <Form.Text className="text-muted small">
-                            Esto definirá la hora de salida estimada.
-                        </Form.Text>
-                    </Form.Group>
+                   <Form.Group className="text-start bg-light p-3 rounded border">
+    <Form.Label className="fw-semibold d-flex align-items-center gap-2" >
+        <MdTimer className="text-success"/> 
+        Horas a cubrir hoy: 
+    </Form.Label>
+    <div className="d-flex gap-2">
+        {/* Botón de restar: Se desactiva si llega a 1 */}
+        <Button 
+            variant="outline-secondary" 
+            onClick={() => setHoras(Math.max(1, horas - 1))}
+            disabled={horas <= 1}
+        >
+            -
+        </Button>
+        
+        <Form.Control 
+            type="number" 
+            value={horas} 
+            onChange={(e) => {
+                let valor = parseInt(e.target.value);
+                // Si borra todo, lo dejamos temporalmente vacío para que pueda escribir otro número
+                if (isNaN(valor)) {
+                    setHoras('');
+                } 
+                // Si escribe más de 6, lo topamos a 6 a la fuerza
+                else if (valor > 6) {
+                    setHoras(6);
+                } 
+                else {
+                    setHoras(valor);
+                }
+            }}
+            // Si el usuario deja el campo vacío y da clic fuera, lo regresamos a 1
+            onBlur={() => {
+                if (!horas || horas < 1) setHoras(1);
+            }}
+            className="text-center fw-bold fs-5"
+            min="1"
+            max="6"
+            autoFocus
+        />
+        
+        {/* Botón de sumar: Lo topamos a 6 y se desactiva si llega al límite */}
+        <Button 
+            variant="outline-secondary" 
+            onClick={() => setHoras(Math.min(6, horas + 1))}
+            disabled={horas >= 6}
+        >
+            +
+        </Button>
+    </div>
+    <Form.Text className="text-muted small">
+        Esto definirá la hora de salida estimada (Máximo 6 horas permitidas).
+    </Form.Text>
+</Form.Group>
                 </Modal.Body>
                 
                 <Modal.Footer>
