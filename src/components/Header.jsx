@@ -47,7 +47,7 @@ export const Header = () => {
               <img src={logo_BAL3} alt="Logo" height="70" />
             </div>
           </NavLink>
-          <span className="fw-bold" style={{ color: 'White' }}>Visitas</span>
+          <span className="fw-bold" style={{ color: 'White' }}>Sistema de Gestion de Visitas y Servicio Comunitario</span>
         </div>
 
         {/* ZONA DE USUARIO (Derecha) */}

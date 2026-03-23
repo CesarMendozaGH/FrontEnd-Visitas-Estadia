@@ -9,7 +9,7 @@ export const MyNavbar = () => {
     <Navbar bg="dark" data-bs-theme="dark" expand="lg" className="shadow-sm">
       <Container fluid> {/* fluid hace que el contenido dentro de la barra aproveche el ancho */}
         <Navbar.Brand as={Link} to="/" className="fw-bold">
-            Gestión Visitas
+            Sistema de Gestión Visitas Y Servicio Comunitario
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
