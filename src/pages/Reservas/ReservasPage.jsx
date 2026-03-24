@@ -7,10 +7,11 @@ import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
 import Form from 'react-bootstrap/Form';
-import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck, MdFilterList } from "react-icons/md";
+import { MdAdd, MdEdit, MdDelete, MdPersonAdd, MdCheck, MdFilterList, MdMeetingRoom } from "react-icons/md";
 import Swal from 'sweetalert2';
 
 export function ReservasPage() {
+    // 1. ESTADOS
     const [reservas, setReservas] = useState([]);
     const [espacios, setEspacios] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -21,14 +22,17 @@ export function ReservasPage() {
     const [showAsistentesModal, setShowAsistentesModal] = useState(false);
     const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
 
-    // NUEVO ESTADO PARA EL FILTRO (Por defecto mostramos todas las "Activas")
+    // FILTROS
+    const [busqueda, setBusqueda] = useState('');
     const [filtroEstatus, setFiltroEstatus] = useState('ACTIVAS');
+    const [filtroEspacio, setFiltroEspacio] = useState('TODOS'); // <-- NUEVO ESTADO PARA ESPACIOS
 
-    //MANEJO DE ROLES   
+    // Manejo de roles y reloj
     const rolActual = localStorage.getItem('rol_dev');
-    const esSuperAdmin = rolActual === 'SUPERADMIN';
-    // Forzar re-renderizado cada minuto para actualizar estatus de tiempo
+    const isSuperAdmin = rolActual === 'SUPERADMIN';
     const [, setTick] = useState(0);
+
+    // 2. EFECTOS
     useEffect(() => {
         const timer = setInterval(() => {
             setTick(t => t + 1);
@@ -41,6 +45,7 @@ export function ReservasPage() {
         cargarEspacios();
     }, []);
 
+    // 3. FUNCIONES DE CARGA
     const cargarReservas = async () => {
         setLoading(true);
         try {
@@ -63,6 +68,7 @@ export function ReservasPage() {
         }
     };
 
+    // 4. MANEJO DE MODALES
     const handleOpenCreate = () => {
         setEditingReserva(null);
         setShowModal(true);
@@ -133,6 +139,7 @@ export function ReservasPage() {
         }
     };
 
+    // 5. FUNCIONES AUXILIARES
     const getEspacioNombre = (item) => {
         if (item.espacio?.nombre) {
             return item.espacio.nombre;
@@ -172,33 +179,83 @@ export function ReservasPage() {
         return { texto: "Programada", color: "success", finalizada: false, rawStatus: "PROGRAMADA" };
     };
 
-    // LOGICA DE FILTRADO
+    // ------------------------------------------------------------------
+    // 6. LÓGICA DE PROCESAMIENTO DE DATOS EN CASCADA
+    // ------------------------------------------------------------------
+    
+    // A. Calculamos el estado de todas
     const reservasConEstado = reservas.map(res => ({
         ...res,
         estadoObj: getEstadoReserva(res)
     }));
 
-    const reservasFiltradas = reservasConEstado.filter(res => {
+    // B. Filtramos por ESTATUS (Activas, Todas, Canceladas)
+    const reservasFiltradasPorEstatus = reservasConEstado.filter(res => {
         if (filtroEstatus === 'TODAS') return true;
-
-        // El filtro "ACTIVAS" muestra las que aún importan (Programadas o En curso)
         if (filtroEstatus === 'ACTIVAS') {
             return res.estadoObj.rawStatus === 'PROGRAMADA' || res.estadoObj.rawStatus === 'EN_CURSO';
         }
-
-        // Para filtros específicos
         return res.estadoObj.rawStatus === filtroEstatus;
     });
 
-    const isSuperAdmin = localStorage.getItem('rol_dev') === 'SUPERADMIN';
+    // C. Filtramos por ESPACIO
+    const reservasFiltradasPorEspacio = reservasFiltradasPorEstatus.filter(res => {
+        if (filtroEspacio === 'TODOS') return true;
+        return res.espacioId.toString() === filtroEspacio;
+    });
 
+    // D. Filtramos por la CAJA DE BÚSQUEDA de texto, espacio y FECHA
+    const reservasProcesadas = reservasFiltradasPorEspacio
+        .filter(r => {
+            const textoBuscado = busqueda.toLowerCase();
+            const nombre = (r.nombreReservante || '').toLowerCase();
+            const area = (r.areaReservante || '').toLowerCase();
+            const nombreEspacio = (getEspacioNombre(r) || '').toLowerCase();
+            
+            // FORMATO DE FECHA PARA BÚSQUEDA: DD/MM/YYYY yyyy-MM-DD
+            const fecha = new Date(r.fechaInicio);
+            const day = String(fecha.getDate()).padStart(2, '0');
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const year = fecha.getFullYear();
+            const fechaDisplay = `${day}/${month}/${year}`; // 25/03/2026
+            const fechaISO = `${year}-${month}-${day}`;     // 2026-03-25
+            
+            // Búsqueda por: nombre, área, espacio, fecha (DD/MM/YYYY) o fecha ISO
+            return nombre.includes(textoBuscado) || 
+                   area.includes(textoBuscado) || 
+                   nombreEspacio.includes(textoBuscado) ||
+                   fechaDisplay.includes(textoBuscado) ||
+                   fechaISO.includes(textoBuscado);
+        })
+        .sort((a, b) => new Date(b.fechaInicio) - new Date(a.fechaInicio));
+
+    // 7. RENDER
     return (
         <div>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <h2>Gestión de Reservas</h2>
 
                 <div className="d-flex flex-wrap gap-2 align-items-center">
-                    {/* NUEVO: SELECTOR DE FILTROS */}
+                    
+                    {/* NUEVO: SELECTOR DE ESPACIOS */}
+                    <div className="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm border">
+                        <MdMeetingRoom size={20} className="text-muted" />
+                        <Form.Select
+                            value={filtroEspacio}
+                            onChange={(e) => setFiltroEspacio(e.target.value)}
+                            className="border-0 shadow-none fw-semibold"
+                            style={{ cursor: 'pointer', minWidth: '160px' }}
+                        >
+                            <option value="TODOS">Todos los Espacios</option>
+                            {espacios.map(esp => (
+                                <option key={esp.idEspacios} value={esp.idEspacios.toString()}>
+                                    {esp.nombre}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    </div>
+
+                    {/* SELECTOR DE ESTATUS (Intacto, sin borrar) */}
                     <div className="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm border">
                         <MdFilterList size={20} className="text-muted" />
                         <Form.Select
@@ -221,6 +278,16 @@ export function ReservasPage() {
                     </Button>
                 </div>
             </div>
+            
+            <div className="w-50">
+                <Form.Control
+                    type="text"
+                    placeholder="Buscar por reservante, área, espacio o fecha (ej: 25/03/2026)..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="mb-3 shadow-sm border-primary"
+                />
+            </div>
 
             <div className="table-responsive shadow-sm rounded bg-white">
                 <Table hover className="mb-0 align-middle">
@@ -240,11 +307,16 @@ export function ReservasPage() {
                     <tbody>
                         {loading ? (
                             <tr><td colSpan="9" className="text-center py-4">Cargando...</td></tr>
-                        ) : reservasFiltradas.length === 0 ? (
-                            <tr><td colSpan="9" className="text-center py-4 text-muted">No se encontraron reservas para el filtro seleccionado.</td></tr>
+                        ) : reservasProcesadas.length === 0 ? (
+                            <tr><td colSpan="9" className="text-center py-4 text-muted">No se encontraron reservas para tu búsqueda.</td></tr>
                         ) : (
-                            reservasFiltradas.map((item) => {
-                                const estado = item.estadoObj;
+                            reservasProcesadas.map((item) => {
+                                const estado = item.estadoObj || {
+                                    finalizada: false,
+                                    texto: "Desconocido",
+                                    color: "secondary",
+                                    animado: false
+                                };
 
                                 return (
                                     <tr
@@ -287,7 +359,6 @@ export function ReservasPage() {
                                         <td className="text-center">
                                             <div className="btn-group d-flex justify-content-center align-items-center">
 
-                                                {/* 1. BOTÓN DE ASISTENTES: SIEMPRE VISIBLE */}
                                                 <Button
                                                     variant="outline-secondary"
                                                     size="sm"
@@ -297,7 +368,6 @@ export function ReservasPage() {
                                                     <MdPersonAdd />
                                                 </Button>
 
-                                                {/* 2. BOTÓN DE EDITAR: Visible si NO ha finalizado, o si es SUPERADMIN */}
                                                 {(!estado.finalizada || isSuperAdmin) && (
                                                     <Button
                                                         variant="outline-primary"
@@ -310,8 +380,7 @@ export function ReservasPage() {
                                                     </Button>
                                                 )}
 
-                                                {/* 3. BOTÓN DE CANCELAR: Solo visible si NO ha finalizado */}
-                                                {(!estado.finalizada && esSuperAdmin) && (
+                                                {(!estado.finalizada && isSuperAdmin) && (
                                                     <Button
                                                         variant="outline-danger"
                                                         size="sm"
@@ -324,7 +393,6 @@ export function ReservasPage() {
                                                 )}
                                             </div>
 
-                                            {/* Etiqueta de "Finalizada" solo para usuarios normales (el admin ya ve sus botones) */}
                                             {estado.texto === "Completada" && !isSuperAdmin && (
                                                 <div className="text-muted small mt-1"><MdCheck /> Finalizada</div>
                                             )}
@@ -351,6 +419,6 @@ export function ReservasPage() {
                 handleClose={handleCloseAsistentesModal}
                 reserva={reservaSeleccionada}
             />
-        </div>
+        </div >
     );
 }

@@ -64,7 +64,8 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
 
     const handleChange = (e) => {
         const { name, value, type, tagName } = e.target;
-        const esTexto = type === 'text' || tagName?.toLowerCase() === 'textarea';
+        // Convertimos a MAYÚSCULAS en tiempo real mientras el usuario escribe
+        const esTexto = type === 'text' || type === 'textarea' || tagName?.toLowerCase() === 'textarea';
         const valorSanitizado = esTexto ? value.toUpperCase() : value;
 
         setFormData(prev => ({ ...prev, [name]: valorSanitizado }));
@@ -94,6 +95,7 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
         }
 
         // ARMAMOS EL PAQUETE PARA EL BACKEND (Uniendo la misma fecha con las 2 horas distintas)
+        // Los campos de texto ya están en MAYÚSCULAS gracias a handleChange
         const payload = {
             idReserva: formData.idReserva,
             espacioId: parseInt(formData.espacioId),
@@ -142,22 +144,22 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
                     <div className="row">
                         <Form.Group className="mb-3 col-md-6">
                             <Form.Label>Nombre del Reservante *</Form.Label>
-                            <Form.Control type="text" name="nombreReservante" value={formData.nombreReservante} onChange={handleChange} placeholder="NOMBRE COMPLETO" required />
+                            <Form.Control type="text" maxLength="100" name="nombreReservante" value={formData.nombreReservante} onChange={handleChange} placeholder="NOMBRE COMPLETO" required />
                         </Form.Group>
                         <Form.Group className="mb-3 col-md-6">
                             <Form.Label>Área/Departamento *</Form.Label>
-                            <Form.Control type="text" name="areaReservante" value={formData.areaReservante} onChange={handleChange} placeholder="ÁREA DEL RESERVANTE" required />
+                            <Form.Control type="text" maxLength="50" name="areaReservante" value={formData.areaReservante} onChange={handleChange} placeholder="ÁREA DEL RESERVANTE" required />
                         </Form.Group>
                     </div>
 
                     <div className="row">
                         <Form.Group className="mb-3 col-md-6">
                             <Form.Label>Institución Visitante (Opcional)</Form.Label>
-                            <Form.Control type="text" name="institucionVisitante" value={formData.institucionVisitante} onChange={handleChange} placeholder="INSTITUCIÓN O EMPRESA" />
+                            <Form.Control type="text"  maxLength="100" name="institucionVisitante" value={formData.institucionVisitante} onChange={handleChange} placeholder="INSTITUCIÓN O EMPRESA" />
                         </Form.Group>
                         <Form.Group className="mb-3 col-md-6">
                             <Form.Label>Representante de la Visita (Opcional)</Form.Label>
-                            <Form.Control type="text" name="representanteVisita" value={formData.representanteVisita} onChange={handleChange} placeholder="NOMBRE DEL REPRESENTANTE" />
+                            <Form.Control type="text" maxLength="100" name="representanteVisita" value={formData.representanteVisita} onChange={handleChange} placeholder="NOMBRE DEL REPRESENTANTE" />
                         </Form.Group>
                     </div>
 
@@ -195,6 +197,7 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
                         <Form.Group className="col-md-4">
                             <Form.Label>Hora de Inicio *</Form.Label>
                             <Form.Control type="time" name="horaInicio" value={formData.horaInicio} onChange={handleChange} required />
+                            
                         </Form.Group>
 
                         <Form.Group className="col-md-4">
@@ -205,7 +208,7 @@ export function ReservasForm({ show, handleClose, handleSave, reservaEditar, esp
 
                     <Form.Group className="mb-3">
                         <Form.Label>Requerimientos Especiales (Opcional)</Form.Label>
-                        <Form.Control as="textarea" rows={3} name="requerimientosEspecialesJson" value={formData.requerimientosEspecialesJson} onChange={handleChange} placeholder="EJ: PROYECTOR, PANTALLA, ACCESIBILIDAD, ETC." />
+                        <Form.Control as="textarea" maxLength="500" rows={3} name="requerimientosEspecialesJson" value={formData.requerimientosEspecialesJson} onChange={handleChange} placeholder="EJ: PROYECTOR, PANTALLA, ACCESIBILIDAD, ETC." />
                     </Form.Group>
 
                     <div className="d-flex justify-content-end gap-2">

@@ -159,6 +159,8 @@ export function EspaciosPage() {
                 handleClose={handleCloseModal}
                 handleSave={handleSave}
                 espacioEditar={editingEspacio}
+
+                espacios={espacios}
             />
         </div>
     );
