@@ -5,10 +5,18 @@ import { BitacoraPage } from '../pages/Bitacora/BitacoraPage';
 import { ReservasPage } from '../pages/Reservas/ReservasPage';
 import { ComunitarioPage } from '../pages/Comunitario/ComunitarioPage';
 import { UsuariosAdmin } from '../pages/Usuarios/UsuariosAdmin';
-import { ProtectedRoute } from '../components/ProtectedRoute'; // <-- Asegúrate de tener este archivo creado
+import { ProtectedRoute } from '../components/ProtectedRoute';
+import { AuthCallback } from '../pages/Auth/AuthCallback';
 import { HomePage } from '../pages/HomePage';
 
 const router = createBrowserRouter([
+  // 1. 🚨 RUTA DEL CALLBACK INVISIBLE (Fuera del layout para que ocupe toda la pantalla)
+  {
+    path: "/auth/callback",
+    element: <AuthCallback />
+  },
+  
+  // 2. RUTAS NORMALES DE LA APLICACIÓN
   {
     path: "/",
     element: <MainLayout />,
@@ -20,7 +28,7 @@ const router = createBrowserRouter([
       },
       {
         path: "home",
-        element: <HomePage /> // 2. <-- Colocamos el componente oficial
+        element: <HomePage />
       },
 
       // --- RUTAS PROTEGIDAS ---

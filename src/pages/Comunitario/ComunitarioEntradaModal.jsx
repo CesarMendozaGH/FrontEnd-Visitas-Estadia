@@ -7,7 +7,7 @@ import { MdTimer, MdWarning } from "react-icons/md";
 import { BACKEND_BASE_URL } from '../../api/apiConfig';
 
 export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar }) => {
-    const [horas, setHoras] = useState(4); 
+    const [horas, setHoras] = useState(4);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -42,20 +42,20 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
             <Modal.Header closeButton className="bg-success text-white">
                 <Modal.Title>Registrar Entrada</Modal.Title>
             </Modal.Header>
-            
+
             <Form onSubmit={handleSubmit}>
                 <Modal.Body className="text-center p-4">
-                    
+
                     <div className="mb-3 d-flex justify-content-center">
-                        <div className="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm border" 
-                             style={{width: '100px', height: '100px', fontSize: '2.5rem', overflow: 'hidden'}}>
-                            {perfil.urlFotoRostro ? 
-                                <img 
-                                    src={`${BACKEND_BASE_URL}${perfil.urlFotoRostro}`} 
-                                    alt="Foto" 
-                                    className="w-100 h-100" 
+                        <div className="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm border"
+                            style={{ width: '100px', height: '100px', fontSize: '2.5rem', overflow: 'hidden' }}>
+                            {perfil.urlFotoRostro ?
+                                <img
+                                    src={`${BACKEND_BASE_URL}${perfil.urlFotoRostro}`}
+                                    alt="Foto"
+                                    className="w-100 h-100"
                                     style={{ objectFit: 'cover' }}
-                                /> 
+                                />
                                 : 'Foto'}
                         </div>
                     </div>
@@ -69,74 +69,79 @@ export const ComunitarioEntradaModal = ({ show, handleClose, perfil, onConfirmar
 
                     {error && (
                         <Alert variant="danger" className="text-start d-flex align-items-center gap-2">
-                            <MdWarning size={20}/> 
+                            <MdWarning size={20} />
                             <div>{error}</div>
                         </Alert>
                     )}
 
-                   <Form.Group className="text-start bg-light p-3 rounded border">
-    <Form.Label className="fw-semibold d-flex align-items-center gap-2" >
-        <MdTimer className="text-success"/> 
-        Horas a cubrir hoy: 
-    </Form.Label>
-    <div className="d-flex gap-2">
-        {/* Botón de restar: Se desactiva si llega a 1 */}
-        <Button 
-            variant="outline-secondary" 
-            onClick={() => setHoras(Math.max(1, horas - 1))}
-            disabled={horas <= 1}
-        >
-            -
-        </Button>
-        
-        <Form.Control 
-            type="number" 
-            value={horas} 
-            onChange={(e) => {
-                let valor = parseInt(e.target.value);
-                // Si borra todo, lo dejamos temporalmente vacío para que pueda escribir otro número
-                if (isNaN(valor)) {
-                    setHoras('');
-                } 
-                // Si escribe más de 6, lo topamos a 6 a la fuerza
-                else if (valor > 6) {
-                    setHoras(6);
-                } 
-                else {
-                    setHoras(valor);
-                }
-            }}
-            // Si el usuario deja el campo vacío y da clic fuera, lo regresamos a 1
-            onBlur={() => {
-                if (!horas || horas < 1) setHoras(1);
-            }}
-            className="text-center fw-bold fs-5"
-            min="1"
-            max="6"
-            autoFocus
-        />
-        
-        {/* Botón de sumar: Lo topamos a 6 y se desactiva si llega al límite */}
-        <Button 
-            variant="outline-secondary" 
-            onClick={() => setHoras(Math.min(6, horas + 1))}
-            disabled={horas >= 6}
-        >
-            +
-        </Button>
-    </div>
-    <Form.Text className="text-muted small">
-        Esto definirá la hora de salida estimada (Máximo 6 horas permitidas).
-    </Form.Text>
-</Form.Group>
+                    <Form.Group className="text-start bg-light p-3 rounded border">
+                        <Form.Label className="fw-semibold d-flex align-items-center gap-2" >
+                            <MdTimer className="text-success" />
+                            Horas a cubrir hoy:
+                        </Form.Label>
+                        <div className="d-flex gap-2">
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setHoras(Math.max(1, horas - 1))}
+                                disabled={horas <= 1}
+                            >
+                                -
+                            </Button>
+
+                            <Form.Control
+                                type="number"
+                                value={horas}
+                                onChange={(e) => {
+                                    let valor = parseInt(e.target.value);
+                                    if (isNaN(valor)) {
+                                        setHoras('');
+                                    }
+                                    // Subimos el límite duro a 8
+                                    else if (valor > 8) {
+                                        setHoras(8);
+                                    }
+                                    else {
+                                        setHoras(valor);
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (!horas || horas < 1) setHoras(1);
+                                }}
+                                // Si pasa de 6, pintamos el número de rojo/naranja para llamar la atención
+                                className={`text-center fw-bold fs-5 ${horas > 6 ? 'text-danger' : ''}`}
+                                min="1"
+                                max="8" // <-- Nuevo límite
+                                autoFocus
+                            />
+
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setHoras(Math.min(8, horas + 1))} // <-- Nuevo límite
+                                disabled={horas >= 8} // <-- Nuevo límite
+                            >
+                                +
+                            </Button>
+                        </div>
+
+                        {/* MENSAJE DINÁMICO DE AYUDA */}
+                        {horas > 6 ? (
+                            <Form.Text className="text-danger fw-bold small">
+                                 Turno atípico: Estás asignando más de 6 horas. Asegúrate de que sea un caso especial autorizado.
+                            </Form.Text>
+                        ) : (
+                            <Form.Text className="text-muted small">
+                                Define el límite máximo de horas para el día de hoy.
+                            </Form.Text>
+                        )}
+                    </Form.Group>
                 </Modal.Body>
-                
+
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleClose}>
                         Cancelar
                     </Button>
                     <Button variant="success" type="submit">
-                         Confirmar Entrada
+                        Confirmar Entrada
                     </Button>
                 </Modal.Footer>
             </Form>
