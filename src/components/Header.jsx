@@ -53,18 +53,18 @@ export const Header = () => {
         {/* ZONA DE USUARIO (Derecha) */}
         <Nav className="ms-auto">
           <div className="d-flex align-items-center bg-transparent p-2 rounded text-white ms-3">
-            <small className="me-2 text-white fw-bold">Modo Pruebas:</small>
-            <Button
+            {/* <small className="me-2 text-white fw-bold">Modo Pruebas:</small> */}
+            {/* <Button
               variant={currentRole === 'SUPERADMIN' ? "danger" : "secondary"}
               size="sm"
               onClick={toggleDevRole}
             >
               {currentRole}
-            </Button>
+            </Button> */}
 
-            <button className="btn btn-warning fw-bold mb-3" onClick={handleDevLogin}>
+            {/* <button className="btn btn-warning fw-bold mb-3" onClick={handleDevLogin}>
               🧪 SIMULAR INTRANET (MISAEL)
-            </button>
+            </button> */}
           </div>
         </Nav>
       </Container>
