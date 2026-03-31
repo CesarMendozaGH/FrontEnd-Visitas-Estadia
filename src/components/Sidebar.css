@@ -11,12 +11,19 @@
   transform: translateX(2px);
 }
 
-/* Enhanced active state with left border indicator */
+/* Enhanced active state with left border indicator - Naranja */
 .sidebar .nav-link.active {
-  background-color: #0d6efd20;
-  color: #0d6efd;
+  background-color: #f96f31;
+  /* Fondo naranja sólido */
+  color: white;
+  /* Letra blanca para contrastar */
   font-weight: 500;
   box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .nav-link.active .material-symbols-outlined {
+  color: white;
+  /* Icono blanco */
 }
 
 .sidebar .nav-link.active .material-symbols-outlined {
@@ -30,4 +37,51 @@
 
 .sidebar .nav-link.link-dark:hover {
   color: #212529;
+}
+
+button[type="submit"],
+.btn-primary, 
+.btn-info {
+  background-color: #f96f31 !important;
+  border-color: #f96f31 !important;
+  color: white !important;
+}
+
+button[type="submit"]:hover,
+button[type="submit"]:focus,
+.btn-primary:hover, 
+.btn-info:hover {
+  background-color: #e05e26 !important;
+  border-color: #e05e26 !important;
+  color: white !important;
+}
+
+/* Sobrescribir el botón primario delineado (outline) de Bootstrap a Naranja */
+.btn-outline-primary {
+  color: #f96f31 !important;
+  border-color: #f96f31 !important;
+  background-color: transparent !important;
+}
+
+/* Efecto hover/focus para el botón delineado (se rellena de naranja al pasar el mouse) */
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: #f96f31 !important;
+  color: white !important;
+  border-color: #f96f31 !important;
+}
+
+/* Sobrescribir el azul terco de los Nav Pills (el menú del Sidebar) */
+.sidebar .nav-pills .nav-link.active,
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: #f96f31 !important;
+  color: white !important;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Asegurar que el icono dentro del pill activo también sea blanco */
+.sidebar .nav-pills .nav-link.active .material-symbols-outlined {
+  color: white !important;
 }

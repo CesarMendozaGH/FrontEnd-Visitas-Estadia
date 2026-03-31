@@ -36,18 +36,19 @@ export const Header = () => {
   const currentRole = localStorage.getItem('rol_dev') || 'USER';
   return (
     // "sticky-top" asegura que se quede pegado arriba
-    <Navbar data-bs-theme="red" className="border-bottom shadow-sm" style={{ height: '100px', backgroundColor: '#f96f31' }}>
+    <Navbar data-bs-theme="red" className="border-bottom shadow-sm" style={{ height: '100px', backgroundColor: '#ffff' }}>
 
       {/* COLOR ROJO #e79951  */}
+      {/* COLOR NARANJA #f96f31 */}
       <Container fluid>
         {/* ZONA DEL LOGO */}
         <div className="d-flex align-items-center gap-2">
           <NavLink to="home">
             <div style={{ backgroundColor: 'transparent', padding: '10px', borderRadius: '10    px' }}>
-              <img src={logo_BAL3} alt="Logo" height="70" />
+              <img src={logo_BAL} alt="Logo" height="70" />
             </div>
           </NavLink>
-          <span className="fw-bold" style={{ color: 'White' }}>Sistema de Gestion de Visitas y Servicio Comunitario</span>
+          <span className="fw-bold" style={{ color: '#f96f31' }}>Sistema de Gestion de Visitas y Servicio Comunitario</span>
         </div>
 
         {/* ZONA DE USUARIO (Derecha) */}
