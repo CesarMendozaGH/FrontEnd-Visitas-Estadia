@@ -1,38 +1,48 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import api from '../../api/apiConfig'; // Importamos tu api configurada
 
 export function AuthCallback() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
     useEffect(() => {
-        // 1. Atrapamos los datos que C# nos mandó por la URL
-        const token = searchParams.get('token');
-        const rol = searchParams.get('rol');
+        // 1. Atrapamos los datos EXACTAMENTE como los manda la Intranet
+        const accessToken = searchParams.get('access_token');
+        const sid = searchParams.get('sid');
 
-        if (token) {
-            // 2. Los guardamos en el bolsillo (localStorage)
-            localStorage.setItem('jwt_token', token);
-            if (rol) {
-                localStorage.setItem('rol_dev', rol);
-            }
+        if (accessToken && sid) {
+            // 2. Le pedimos a NUESTRO C# que valide este token y nos dé uno propio
+            api.post('/Auth/IntercambiarToken', { 
+                access_token: accessToken, 
+                sid: sid 
+            })
+            .then((response) => {
+                // 3. C# nos respondió que todo está bien y nos mandó el Token Interno con Roles
+                localStorage.setItem('jwt_token', response.data.token);
+                localStorage.setItem('rol_dev', response.data.rol);
 
-            // 3. Limpiamos la URL fea y mandamos al usuario a la página principal
-            // Cambia '/reservas' por la ruta inicial de tu sistema (ej. '/home' o '/')
-            navigate('/reservas', { replace: true }); 
+                localStorage.setItem('nombre_usuario', response.data.nombre);
+                
+                // 4. Limpiamos la URL y entramos al sistema
+                navigate('/home', { replace: true });
+            })
+            .catch((error) => {
+                console.error("Error al validar con C#:", error);
+                alert("Acceso denegado: El token de la Intranet no es válido o expiró.");
+            });
+
         } else {
-            // Si alguien entra sin token, lo mandamos a volar
-            console.error("No se recibió token de la Intranet");
+            console.error("Faltan datos en la URL de la Intranet");
         }
     }, [navigate, searchParams]);
 
-    // Esta pantalla dura como medio segundo, así que ponemos un "Cargando" bonito
     return (
         <div className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light">
             <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
                 <span className="visually-hidden">Cargando...</span>
             </div>
-            <h4 className="mt-3 text-secondary">Autenticando con la Intranet...</h4>
+            <h4 className="mt-3 text-secondary">Validando seguridad con el servidor...</h4>
         </div>
     );
 }

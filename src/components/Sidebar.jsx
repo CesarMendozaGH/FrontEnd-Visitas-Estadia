@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import Nav from 'react-bootstrap/Nav';
+import Button from 'react-bootstrap/Button'; // <-- 1. Importamos el Button
 import './Sidebar.css';
 
 export const Sidebar = () => {
   const location = useLocation();
-
 
   const rolActual = localStorage.getItem('rol_dev') || 'USUARIO_NORMAL';
 
@@ -15,8 +15,11 @@ export const Sidebar = () => {
   const puedeVerComunitario = ['SUPERADMIN', 'TOTAL', 'DIRECTIVO', 'COMUNITARIO'].includes(rolActual);
   const puedeVerUsuarios = rolActual === 'SUPERADMIN';
 
+  // 2. CREAMOS LA FUNCIÓN PARA REGRESAR A LA INTRANET
+  const handleVolverIntranet = () => {
+      window.location.href = 'https://www.google.com/';
+  };
 
-  
   return (
     <div className="sidebar d-flex flex-column flex-shrink-0 p-3 bg-light border-end" style={{ width: '240px', minHeight: 'calc(100vh - 60px)' }}>
 
@@ -78,7 +81,18 @@ export const Sidebar = () => {
 
       </Nav>
 
+      {/* 3. AGREGAMOS EL BOTÓN EN LA ZONA INFERIOR */}
       <div className="mt-auto pt-3 border-top">
+        <Button 
+            variant="outline-danger" 
+            size="sm" 
+            className="w-100 mb-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            onClick={handleVolverIntranet}
+        >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
+            Salir de Sistema de Visitas
+        </Button>
+
         <small className="text-muted d-block fw-bold mb-1">Rol: {rolActual}</small>
         <small className="text-muted">Versión 1.0</small>
       </div>

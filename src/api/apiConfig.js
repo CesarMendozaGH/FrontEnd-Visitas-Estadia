@@ -22,10 +22,11 @@ const api = axios.create({
 // Este es el "Interceptor": Se ejecuta antes de cada petición
 api.interceptors.request.use(
     (config) => {
-        // Buscamos el token en el LocalStorage
-        const token = localStorage.getItem('token');
-        
-        // Si existe, se lo pegamos en el Header (¡Como si fuéramos Swagger!)
+        const token = localStorage.getItem('jwt_token');
+
+        // El "chismoso" que nos dirá la verdad
+        console.log("Interceptor disparado. Token a enviar:", token ? "¡SÍ HAY TOKEN!" : "VACÍO");
+
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
