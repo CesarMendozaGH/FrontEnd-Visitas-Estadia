@@ -68,7 +68,7 @@ export const UsuariosAdmin = () => {
                 <FaUserShield /> Administración de Usuarios
             </h2>
 
-            <Table responsive hover className="align-middle">
+            <Table responsive="md" hover className="align-middle">
                 <thead className="table-light">
                     <tr>
                         <th>ID</th>

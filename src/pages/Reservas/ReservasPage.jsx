@@ -289,7 +289,7 @@ export function ReservasPage() {
                 />
             </div>
 
-            <div className="table-responsive shadow-sm rounded bg-white">
+            <div className="table-responsive table-responsive-md shadow-sm rounded bg-white">
                 <Table hover className="mb-0 align-middle">
                     <thead className="table-light">
                         <tr>

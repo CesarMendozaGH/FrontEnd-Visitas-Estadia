@@ -262,7 +262,7 @@ export function ReservasAsistentesModal({ show, handleClose, reserva }) {
 
                 {/* Tabla de asistentes registrados */}
                 <h6 className="fw-bold mt-4">Lista Oficial ({asistentes.length})</h6>
-                <div className="table-responsive shadow-sm border rounded">
+                <div className="table-responsive table-responsive-md shadow-sm border rounded">
                     <Table striped hover size="sm" className="mb-0 align-middle">
                         <thead className="table-light">
                             <tr>
