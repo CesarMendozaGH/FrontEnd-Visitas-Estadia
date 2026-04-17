@@ -17,7 +17,7 @@ export const Sidebar = () => {
 
   // 2. CREAMOS LA FUNCIÓN PARA REGRESAR A LA INTRANET
   const handleVolverIntranet = () => {
-      window.location.href = 'https://www.google.com/';
+      window.location.href = 'http://192.168.1.4/app/dashboard';
   };
 
   return (
